@@ -306,10 +306,9 @@ namespace SmartOnFhirApp.Services
             var payload = new
             {
                 model = model,
-                prompt = prompt,
                 messages = new[] { 
                     new { role = "user", content = prompt } 
-                }, // 許多新模型 API (如 OpenRouter/OpenAI Chat) 需要 messages 格式而非 prompt
+                },
                 max_tokens = 2000,
                 temperature = 0.3,
                 top_p = 1.0,
