@@ -1,6 +1,7 @@
 @page "/launch"
 @inject NavigationManager nav
 @inject SmartAuthService AuthService
+@inject IConfiguration Config
 
 <PageTitle>SMART Launch</PageTitle>
 
@@ -11,6 +12,10 @@
             <div style="background: #ffebee; color: #c62828; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                 <h4 style="margin: 0 0 0.5rem 0;">❌ 啟動失敗</h4>
                 <p style="margin: 0;">@error</p>
+                <p style="font-size: 0.9em; color: #666; margin-top: 0.5rem;">
+                    Client ID: @clientId <br/>
+                    Redirect URI: @(nav.BaseUri + "redirect")
+                </p>
             </div>
         }
         else
@@ -36,14 +41,13 @@
     private string? launch;
     private string? error;
     private string? generatedAuthUrl;
+    private string clientId = "";
 
     // EHR Launch 預設 FHIR Server
     private const string DEFAULT_EHR_FHIR_SERVER = "https://thas.mohw.gov.tw/v/r4/fhir";
     
     // Provider Standalone Launch FHIR Server (使用模擬器)
     private const string STANDALONE_FHIR_SERVER = "https://thas.mohw.gov.tw/v/r4/sim/WzIsIiIsIiIsIkFVVE8iLDAsMCwwLCIiLCIiLCIiLCIiLCIiLCIiLCIiLDAsMSwiIl0/fhir";
-    
-    private const string CLIENT_ID = "ntuh_fhir_app";
     
     // EHR Launch 需要 launch scope
     private const string EHR_LAUNCH_SCOPES = "launch openid fhirUser patient/*.read";
@@ -54,6 +58,8 @@
     {
         try
         {
+            clientId = Config["Fhir:ClientId"] ?? "ntuh_fhir_app";
+
             var uri = nav.ToAbsoluteUri(nav.Uri);
             var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
             
@@ -82,7 +88,7 @@
 
             generatedAuthUrl = AuthService.BuildAuthorizationUrl(
                 config.AuthorizationEndpoint,
-                CLIENT_ID,
+                clientId,
                 redirectUri,
                 scopes,
                 state,

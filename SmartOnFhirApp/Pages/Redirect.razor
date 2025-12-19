@@ -1,6 +1,7 @@
 @page "/redirect"
 @inject NavigationManager nav
 @inject SmartAuthService AuthService
+@inject IConfiguration Config
 
 <PageTitle>SMART Authentication</PageTitle>
 
@@ -65,7 +66,7 @@
     private string? error;
     private string? currentUri;
     private string? debugJson;
-    private const string CLIENT_ID = "ntuh_fhir_app";
+    private string clientId = "";
     private bool hasProcessed = false;
 
     protected override async Task OnInitializedAsync()
@@ -119,13 +120,15 @@
                 return;
             }
 
+            var clientId = Config["Fhir:ClientId"] ?? "ntuh_fhir_app";
+
             // 交換 Token
             var redirectUri = nav.BaseUri + "redirect"; // 必須與 Launch 時一致
             var tokenResponse = await AuthService.ExchangeCodeForTokenAsync(
                 config.TokenEndpoint,
                 code,
                 redirectUri,
-                CLIENT_ID
+                clientId
             );
 
             if (tokenResponse != null)

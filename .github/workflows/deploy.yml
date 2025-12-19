@@ -25,12 +25,23 @@ jobs:
 
       # Automatically update base-tag in index.html to match the repository name
       # Example: "MyUser/MyRepo" -> "/MyRepo/"
-      - name: Change base-tag in index.html from / to Project Name
+      - name: Configure base tag
         run: |
-          sed -i 's/<base href="\/" \/>/<base href="\/${{ github.event.repository.name }}\/" \/>/g' release/wwwroot/index.html
-          # Also update 404.html if it exists and has base tag
+          REPO_NAME="${{ github.event.repository.name }}"
+          if [[ "$REPO_NAME" == *".github.io" ]]; then
+            echo "Repository is a User/Organization User Page. Using root base path."
+            BASE_HREF="/"
+          else
+            echo "Repository is a Project Page. Using subfolder base path."
+            BASE_HREF="/$REPO_NAME/"
+          fi
+          
+          echo "Setting base href to: $BASE_HREF"
+          # Use different delimiter for sed to avoid escaping slashes
+          sed -i "s|<base href=\"/\" />|<base href=\"$BASE_HREF\" />|g" release/wwwroot/index.html
+          
           if [ -f release/wwwroot/404.html ]; then
-            sed -i 's/<base href="\/" \/>/<base href="\/${{ github.event.repository.name }}\/" \/>/g' release/wwwroot/404.html
+            sed -i "s|<base href=\"/\" />|<base href=\"$BASE_HREF\" />|g" release/wwwroot/404.html
           fi
 
       - name: Add .nojekyll file
