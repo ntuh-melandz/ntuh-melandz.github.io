@@ -238,7 +238,7 @@ namespace SmartOnFhirApp.Services
                     var result = await CallPrimaryAiAsync(_httpClient, primaryEndpoint, primaryModel, primaryKey ?? "", patientContext);
                     if (!string.IsNullOrEmpty(result))
                     {
-                        return $"[Source: OpenRouter / {primaryModel}] \n" + result;
+                        return result;
                     }
                 }
                 catch (Exception ex)
@@ -390,7 +390,7 @@ namespace SmartOnFhirApp.Services
             var jsonResponse = await response.Content.ReadFromJsonAsync<OllamaResponse>();
             var aiSummary = jsonResponse?.Response?.Trim() ?? "";
             
-            return $"[Source: Ollama / {model}] \n" + CleanAiOutput(aiSummary);
+            return CleanAiOutput(aiSummary);
         }
 
         private string CalculateAge(string? birthDateString)
