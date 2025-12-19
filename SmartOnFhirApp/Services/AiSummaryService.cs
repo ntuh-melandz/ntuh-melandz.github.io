@@ -221,13 +221,21 @@ namespace SmartOnFhirApp.Services
             // 1. 嘗試主要 AI 服務 (AiService)
             var primaryEndpoint = _configuration["AiService:Endpoint"];
             var primaryModel = _configuration["AiService:Model"] ?? "Openai-Gpt";
+            var primaryKey = _configuration["AiService:Key"];
 
             if (!string.IsNullOrEmpty(primaryEndpoint))
             {
+                // 對於 OpenRouter 或 OpenAI Chat API，Endpoint 通常應該是 /chat/completions
+                if (!primaryEndpoint.EndsWith("/chat/completions") && !primaryEndpoint.Contains("generate")) 
+                {
+                   // 若使用者只填了 Base URL (如 https://openrouter.ai/api/v1)，自動補上
+                   primaryEndpoint = primaryEndpoint.TrimEnd('/') + "/chat/completions";
+                }
+
                 try
                 {
-                    Console.WriteLine($"[AiService] 嘗試主要服務: {primaryEndpoint}");
-                    var result = await CallPrimaryAiAsync(_httpClient, primaryEndpoint, primaryModel, patientContext);
+                    Console.WriteLine($"[AiService] 嘗試主要服務: {primaryEndpoint} (Model: {primaryModel})");
+                    var result = await CallPrimaryAiAsync(_httpClient, primaryEndpoint, primaryModel, primaryKey ?? "", patientContext);
                     if (!string.IsNullOrEmpty(result))
                     {
                         return result;
@@ -282,23 +290,41 @@ namespace SmartOnFhirApp.Services
             }
         }
 
-        private async Task<string> CallPrimaryAiAsync(HttpClient httpClient, string endpoint, string model, string patientContext)
+        private async Task<string> CallPrimaryAiAsync(HttpClient httpClient, string endpoint, string model, string apiKey, string patientContext)
         {
+            if (string.IsNullOrEmpty(apiKey))
+            {
+                throw new Exception("未設定 AI Service Key");
+            }
+
+            // 確保請求包含 Authorization Header
+            // 注意：httpClient 是單例的，修改 DefaultRequestHeaders 會影響全域。
+            // 建議使用 HttpRequestMessage 來發送請求。
+            
             var prompt = BuildPrompt(patientContext);
 
             var payload = new
             {
                 model = model,
                 prompt = prompt,
+                messages = new[] { 
+                    new { role = "user", content = prompt } 
+                }, // 許多新模型 API (如 OpenRouter/OpenAI Chat) 需要 messages 格式而非 prompt
                 max_tokens = 2000,
                 temperature = 0.3,
                 top_p = 1.0,
                 frequency_penalty = 0.3,
-                presence_penalty = 0.0,
-                stop = new[] { "[角色]", "[病患資料]", "[要求]", "---", "```", "\n\n\n", "Draft:", "Note:", "Reasoning:", "思考過程:" }
+                presence_penalty = 0.0
             };
 
-            var response = await httpClient.PostAsJsonAsync(endpoint, payload);
+            var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+            // OpenRouter 需要 Referer 和 X-Title
+            request.Headers.Add("HTTP-Referer", "https://github.com/ntuh-melandz/ntuh-melandz.github.io");
+            request.Headers.Add("X-Title", "SmartOnFhirApp");
+            request.Content = JsonContent.Create(payload);
+
+            var response = await httpClient.SendAsync(request);
             
             if (!response.IsSuccessStatusCode)
             {
@@ -307,7 +333,7 @@ namespace SmartOnFhirApp.Services
             }
 
             var rawResponse = await response.Content.ReadAsStringAsync();
-            Console.WriteLine($"[AiService] Raw Response: {rawResponse}");
+            Console.WriteLine($"[AiService] Raw Response: {rawResponse.Substring(0, Math.Min(rawResponse.Length, 200))}..."); // 只印前200字避免Log過長
 
             try 
             {
@@ -318,14 +344,14 @@ namespace SmartOnFhirApp.Services
                 if (root.TryGetProperty("choices", out var choices) && choices.GetArrayLength() > 0)
                 {
                     var firstChoice = choices[0];
-                    if (firstChoice.TryGetProperty("text", out var textProp))
-                    {
-                        aiSummary = textProp.GetString();
-                    }
-                    else if (firstChoice.TryGetProperty("message", out var messageProp) && 
-                             messageProp.TryGetProperty("content", out var contentProp))
+                    if (firstChoice.TryGetProperty("message", out var messageProp) && 
+                        messageProp.TryGetProperty("content", out var contentProp))
                     {
                         aiSummary = contentProp.GetString();
+                    }
+                    else if (firstChoice.TryGetProperty("text", out var textProp))
+                    {
+                        aiSummary = textProp.GetString();
                     }
                 }
 

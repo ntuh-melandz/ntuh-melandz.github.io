@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("SmartOnFhirApp")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f0c8fc7cce3ec263d16a03cd0edb96045d281d6d")]
 [assembly: System.Reflection.AssemblyProductAttribute("SmartOnFhirApp")]
 [assembly: System.Reflection.AssemblyTitleAttribute("SmartOnFhirApp")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

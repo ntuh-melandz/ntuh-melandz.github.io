@@ -1185,6 +1185,7 @@ D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\SmartOnFhirAp
 D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\refint\SmartOnFhirApp.dll
 D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\SmartOnFhirApp.pdb
 D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\ref\SmartOnFhirApp.dll
-D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\compressed\fvc7j3pr8o-{0}-96z1zi8yqw-96z1zi8yqw.gz
-D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\compressed\qg3yy7nwx3-{0}-2888z729vb-2888z729vb.gz
-D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\compressed\isx8svdp09-{0}-w5m80i3p91-w5m80i3p91.gz
+D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\SmartOnFhirApp.sourcelink.json
+D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\compressed\fvc7j3pr8o-{0}-vkeqsv3oje-vkeqsv3oje.gz
+D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\compressed\qg3yy7nwx3-{0}-yscs49fc6s-yscs49fc6s.gz
+D:\Users\s8823\Desktop\SmartOnFhir\SmartOnFhirApp\obj\Debug\net8.0\compressed\isx8svdp09-{0}-hs42y7uee7-hs42y7uee7.gz
