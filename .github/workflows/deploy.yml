@@ -1,0 +1,43 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy-to-github-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Publish .NET Core Project
+        # Publish to the 'release' folder
+        run: dotnet publish SmartOnFhirApp/SmartOnFhirApp.csproj -c Release -o release --nologo
+
+      # Automatically update base-tag in index.html to match the repository name
+      # Example: "MyUser/MyRepo" -> "/MyRepo/"
+      - name: Change base-tag in index.html from / to Project Name
+        run: |
+          sed -i 's/<base href="\/" \/>/<base href="\/${{ github.event.repository.name }}\/" \/>/g' release/wwwroot/index.html
+          # Also update 404.html if it exists and has base tag
+          if [ -f release/wwwroot/404.html ]; then
+            sed -i 's/<base href="\/" \/>/<base href="\/${{ github.event.repository.name }}\/" \/>/g' release/wwwroot/404.html
+          fi
+
+      - name: Add .nojekyll file
+        run: touch release/wwwroot/.nojekyll
+
+      - name: Commit and Push to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: release/wwwroot

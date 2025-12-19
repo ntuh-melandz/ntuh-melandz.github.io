@@ -1,0 +1,159 @@
+@page "/redirect"
+@inject NavigationManager nav
+@inject SmartAuthService AuthService
+
+<PageTitle>SMART Authentication</PageTitle>
+
+<div class="redirect-container">
+    <div class="card">
+        <div class="card-body text-center">
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="alert alert-danger">
+                    <h4>授權失敗</h4>
+                    <p>@error</p>
+                    <button class="btn btn-primary mt-3" @onclick="GoHome">回首頁</button>
+                </div>
+            }
+            else
+            {
+                <div class="spinner mb-3"></div>
+                <h3>正在處理授權...</h3>
+                <p class="text-muted">正在交換 Access Token</p>
+            }
+            
+            <div class="mt-4 text-start">
+                <small class="text-muted">Debug Info (URL):</small>
+                <code class="d-block" style="word-break: break-all;">@currentUri</code>
+                
+                @if (!string.IsNullOrEmpty(debugJson))
+                {
+                    <div class="mt-2">
+                        <small class="text-muted">Token Response:</small>
+                        <pre class="bg-light p-2 rounded" style="font-size: 0.8rem; text-align: left; max-height: 200px; overflow-y: auto;">@debugJson</pre>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .redirect-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 80vh;
+    }
+    /* Spinner 樣式重複使用，實務上應放在 app.css */
+    .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto;
+    }
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+@code {
+    private string? error;
+    private string? currentUri;
+    private string? debugJson;
+    private const string CLIENT_ID = "ntuh_fhir_app";
+    private bool hasProcessed = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ProcessAuthCallback();
+    }
+
+    private async Task ProcessAuthCallback()
+    {
+        if (hasProcessed) return;
+        hasProcessed = true;
+
+        try
+        {
+            currentUri = nav.Uri;
+
+            // 從 NavigationManager 取得 URL 參數
+            var uri = nav.ToAbsoluteUri(nav.Uri);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+
+            if (query.ContainsKey("error"))
+            {
+                error = query["error"].ToString();
+                if (query.ContainsKey("error_description"))
+                {
+                    error += $": {query["error_description"]}";
+                }
+                return;
+            }
+
+            var code = query.ContainsKey("code") ? query["code"].ToString() : null;
+            if (string.IsNullOrEmpty(code))
+            {
+                error = "未收到授權碼 (Authorization Code)。";
+                return;
+            }
+
+            // 取得之前儲存的 FHIR Base URL
+            var iss = await AuthService.GetStoredFhirBaseUrlAsync();
+            if (string.IsNullOrEmpty(iss))
+            {
+                error = "找不到 FHIR Server URL (iss)，請重新啟動流程。";
+                return;
+            }
+
+            // 取得 SMART Config 來拿 Token Endpoint
+            var config = await AuthService.GetSmartConfigurationAsync(iss);
+            if (config == null)
+            {
+                error = "無法取得 SMART Configuration。";
+                return;
+            }
+
+            // 交換 Token
+            var redirectUri = nav.BaseUri + "redirect"; // 必須與 Launch 時一致
+            var tokenResponse = await AuthService.ExchangeCodeForTokenAsync(
+                config.TokenEndpoint,
+                code,
+                redirectUri,
+                CLIENT_ID
+            );
+
+            if (tokenResponse != null)
+            {
+                // Debug: Serialize token response
+                debugJson = System.Text.Json.JsonSerializer.Serialize(tokenResponse, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+                StateHasChanged(); // Force re-render to show debug info
+
+                // 儲存 Token
+                await AuthService.StoreTokenResponseAsync(tokenResponse, iss);
+
+                // 成功，導回檢視頁面
+                nav.NavigateTo("/");
+            }
+            else
+            {
+                error = "Token 交換失敗。";
+            }
+        }
+        catch (Exception ex)
+        {
+            error = $"發生錯誤: {ex.Message}";
+            Console.WriteLine(ex);
+        }
+    }
+
+    private void GoHome()
+    {
+        nav.NavigateTo("/");
+    }
+}

@@ -1,0 +1,103 @@
+@page "/launch"
+@inject NavigationManager nav
+@inject SmartAuthService AuthService
+
+<PageTitle>SMART Launch</PageTitle>
+
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh; padding: 2rem;">
+    <div style="background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); max-width: 500px; width: 100%;">
+        @if (!string.IsNullOrEmpty(error))
+        {
+            <div style="background: #ffebee; color: #c62828; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0;">❌ 啟動失敗</h4>
+                <p style="margin: 0;">@error</p>
+            </div>
+        }
+        else
+        {
+            <div style="text-align: center;">
+                <div style="border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                <h2 style="margin-bottom: 1rem;">🔐 正在處理授權...</h2>
+                <p style="color: #666;">正在連接至 FHIR 授權服務</p>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+@code {
+    private string? iss;
+    private string? launch;
+    private string? error;
+    private string? generatedAuthUrl;
+
+    // EHR Launch 預設 FHIR Server
+    private const string DEFAULT_EHR_FHIR_SERVER = "https://thas.mohw.gov.tw/v/r4/fhir";
+    
+    // Provider Standalone Launch FHIR Server (使用模擬器)
+    private const string STANDALONE_FHIR_SERVER = "https://thas.mohw.gov.tw/v/r4/sim/WzIsIiIsIiIsIkFVVE8iLDAsMCwwLCIiLCIiLCIiLCIiLCIiLCIiLCIiLDAsMSwiIl0/fhir";
+    
+    private const string CLIENT_ID = "ntuh_fhir_app";
+    
+    // EHR Launch 需要 launch scope
+    private const string EHR_LAUNCH_SCOPES = "launch openid fhirUser patient/*.read";
+    // Standalone Launch 使用 launch/patient
+    private const string STANDALONE_SCOPES = "openid fhirUser patient/*.read launch/patient";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var uri = nav.ToAbsoluteUri(nav.Uri);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            
+            iss = query.ContainsKey("iss") ? query["iss"].ToString() : null;
+            launch = query.ContainsKey("launch") ? query["launch"].ToString() : null;
+
+            // 判斷啟動模式
+            bool isEhrLaunch = !string.IsNullOrEmpty(launch);
+            
+            // 如果沒有 iss 參數，根據模式選擇預設 Server
+            if (string.IsNullOrEmpty(iss))
+            {
+                iss = isEhrLaunch ? DEFAULT_EHR_FHIR_SERVER : STANDALONE_FHIR_SERVER;
+            }
+
+            var config = await AuthService.GetSmartConfigurationAsync(iss);
+            if (config == null)
+            {
+                error = "無法取得 SMART Configuration";
+                return;
+            }
+
+            var redirectUri = nav.BaseUri + "redirect";
+            var state = Guid.NewGuid().ToString("N");
+            var scopes = isEhrLaunch ? EHR_LAUNCH_SCOPES : STANDALONE_SCOPES;
+
+            generatedAuthUrl = AuthService.BuildAuthorizationUrl(
+                config.AuthorizationEndpoint,
+                CLIENT_ID,
+                redirectUri,
+                scopes,
+                state,
+                iss,
+                isEhrLaunch ? launch : null  // 只有 EHR Launch 才傳 launch 參數
+            );
+
+            await AuthService.StoreTokenResponseAsync(new Models.TokenResponse { AccessToken = "" }, iss);
+            
+            // 直接強制跳轉到授權 URL
+            nav.NavigateTo(generatedAuthUrl, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+        }
+    }
+}

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(dir:*)",
+      "Bash(tasklist:*)",
+      "Bash(cmd.exe //c taskkill //PID 8000 //F)",
+      "Bash(cmd.exe //c taskkill //PID 42588 //F)"
+    ]
+  }
+}

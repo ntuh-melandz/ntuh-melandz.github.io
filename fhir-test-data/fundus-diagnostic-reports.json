@@ -1,0 +1,357 @@
+{
+    "resourceType": "Bundle",
+    "type": "transaction",
+    "entry": [
+        {
+            "fullUrl": "urn:uuid:dr-fundus-001",
+            "resource": {
+                "resourceType": "DiagnosticReport",
+                "id": "dr-fundus-001",
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+                                "code": "IMG",
+                                "display": "Diagnostic Imaging"
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://loinc.org",
+                            "code": "92134-4",
+                            "display": "Fundus photography"
+                        }
+                    ],
+                    "text": "眼底鏡檢查 - AI輔助診斷"
+                },
+                "subject": {
+                    "reference": "Patient/patient-001",
+                    "display": "王小明"
+                },
+                "effectiveDateTime": "2024-12-18T10:00:00+08:00",
+                "issued": "2024-12-18T10:05:00+08:00",
+                "performer": [
+                    {
+                        "reference": "Organization/org-ntuh",
+                        "display": "臺灣大學醫學院附設醫院"
+                    },
+                    {
+                        "display": "VeriSee DR AI System"
+                    }
+                ],
+                "media": [
+                    {
+                        "comment": "右眼眼底影像",
+                        "link": {
+                            "reference": "Media/media-fundus-001"
+                        }
+                    }
+                ],
+                "conclusion": "建議轉診",
+                "conclusionCode": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://hospital.example.org/referral-status",
+                                "code": "REFER",
+                                "display": "建議轉診"
+                            }
+                        ],
+                        "text": "建議轉診至眼科專科醫師"
+                    }
+                ],
+                "presentedForm": [
+                    {
+                        "contentType": "text/plain",
+                        "data": "QUnliIbmnpDntZDmnpw6IOWBtea4rOWIsOimluee8+iGnOeXheiuiui3oeW+tOOAguW7uuitsOi9ieiouo=="
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "DiagnosticReport/dr-fundus-001"
+            }
+        },
+        {
+            "fullUrl": "urn:uuid:dr-fundus-002",
+            "resource": {
+                "resourceType": "DiagnosticReport",
+                "id": "dr-fundus-002",
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+                                "code": "IMG",
+                                "display": "Diagnostic Imaging"
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://loinc.org",
+                            "code": "92134-4",
+                            "display": "Fundus photography"
+                        }
+                    ],
+                    "text": "眼底鏡檢查 - AI輔助診斷"
+                },
+                "subject": {
+                    "reference": "Patient/patient-002",
+                    "display": "李美華"
+                },
+                "effectiveDateTime": "2024-12-18T11:30:00+08:00",
+                "issued": "2024-12-18T11:35:00+08:00",
+                "performer": [
+                    {
+                        "reference": "Organization/org-ntuh",
+                        "display": "臺灣大學醫學院附設醫院"
+                    },
+                    {
+                        "display": "VeriSee DR AI System"
+                    }
+                ],
+                "media": [
+                    {
+                        "comment": "右眼眼底影像",
+                        "link": {
+                            "reference": "Media/media-fundus-002"
+                        }
+                    }
+                ],
+                "conclusion": "無需轉診",
+                "conclusionCode": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://hospital.example.org/referral-status",
+                                "code": "NO_REFER",
+                                "display": "無需轉診"
+                            }
+                        ],
+                        "text": "眼底正常，無需轉診"
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "DiagnosticReport/dr-fundus-002"
+            }
+        },
+        {
+            "fullUrl": "urn:uuid:dr-fundus-003",
+            "resource": {
+                "resourceType": "DiagnosticReport",
+                "id": "dr-fundus-003",
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+                                "code": "IMG",
+                                "display": "Diagnostic Imaging"
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://loinc.org",
+                            "code": "92134-4",
+                            "display": "Fundus photography"
+                        }
+                    ],
+                    "text": "眼底鏡檢查 - AI輔助診斷"
+                },
+                "subject": {
+                    "reference": "Patient/patient-003",
+                    "display": "陳建國"
+                },
+                "effectiveDateTime": "2024-12-17T14:00:00+08:00",
+                "issued": "2024-12-17T14:05:00+08:00",
+                "performer": [
+                    {
+                        "reference": "Organization/org-ntuh",
+                        "display": "臺灣大學醫學院附設醫院"
+                    },
+                    {
+                        "display": "VeriSee DR AI System"
+                    }
+                ],
+                "media": [
+                    {
+                        "comment": "左眼眼底影像",
+                        "link": {
+                            "reference": "Media/media-fundus-003"
+                        }
+                    }
+                ],
+                "conclusion": "建議轉診",
+                "conclusionCode": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://hospital.example.org/referral-status",
+                                "code": "REFER_URGENT",
+                                "display": "緊急轉診"
+                            }
+                        ],
+                        "text": "發現糖尿病視網膜病變，強烈建議盡快轉診眼科"
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "DiagnosticReport/dr-fundus-003"
+            }
+        },
+        {
+            "fullUrl": "urn:uuid:dr-fundus-004",
+            "resource": {
+                "resourceType": "DiagnosticReport",
+                "id": "dr-fundus-004",
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+                                "code": "IMG",
+                                "display": "Diagnostic Imaging"
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://loinc.org",
+                            "code": "92134-4",
+                            "display": "Fundus photography"
+                        }
+                    ],
+                    "text": "眼底鏡檢查 - AI輔助診斷"
+                },
+                "subject": {
+                    "reference": "Patient/patient-004",
+                    "display": "林淑芬"
+                },
+                "effectiveDateTime": "2024-12-16T09:00:00+08:00",
+                "issued": "2024-12-16T09:05:00+08:00",
+                "performer": [
+                    {
+                        "reference": "Organization/org-ntuh",
+                        "display": "臺灣大學醫學院附設醫院"
+                    },
+                    {
+                        "display": "VeriSee DR AI System"
+                    }
+                ],
+                "media": [
+                    {
+                        "comment": "雙眼眼底影像",
+                        "link": {
+                            "reference": "Media/media-fundus-004"
+                        }
+                    }
+                ],
+                "conclusion": "追蹤觀察",
+                "conclusionCode": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://hospital.example.org/referral-status",
+                                "code": "FOLLOW_UP",
+                                "display": "追蹤觀察"
+                            }
+                        ],
+                        "text": "輕度白內障跡象，建議3個月後追蹤"
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "DiagnosticReport/dr-fundus-004"
+            }
+        },
+        {
+            "fullUrl": "urn:uuid:dr-fundus-005",
+            "resource": {
+                "resourceType": "DiagnosticReport",
+                "id": "dr-fundus-005",
+                "status": "final",
+                "category": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://terminology.hl7.org/CodeSystem/v2-0074",
+                                "code": "IMG",
+                                "display": "Diagnostic Imaging"
+                            }
+                        ]
+                    }
+                ],
+                "code": {
+                    "coding": [
+                        {
+                            "system": "http://loinc.org",
+                            "code": "92134-4",
+                            "display": "Fundus photography"
+                        }
+                    ],
+                    "text": "眼底鏡檢查 - AI輔助診斷"
+                },
+                "subject": {
+                    "reference": "Patient/patient-005",
+                    "display": "張志偉"
+                },
+                "effectiveDateTime": "2024-12-15T16:30:00+08:00",
+                "issued": "2024-12-15T16:35:00+08:00",
+                "performer": [
+                    {
+                        "reference": "Organization/org-ntuh",
+                        "display": "臺灣大學醫學院附設醫院"
+                    },
+                    {
+                        "display": "VeriSee DR AI System"
+                    }
+                ],
+                "media": [
+                    {
+                        "comment": "右眼眼底影像",
+                        "link": {
+                            "reference": "Media/media-fundus-005"
+                        }
+                    }
+                ],
+                "conclusion": "無需轉診",
+                "conclusionCode": [
+                    {
+                        "coding": [
+                            {
+                                "system": "http://hospital.example.org/referral-status",
+                                "code": "NO_REFER",
+                                "display": "無需轉診"
+                            }
+                        ],
+                        "text": "眼底正常，無異常發現"
+                    }
+                ]
+            },
+            "request": {
+                "method": "PUT",
+                "url": "DiagnosticReport/dr-fundus-005"
+            }
+        }
+    ]
+}

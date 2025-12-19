@@ -1,0 +1,253 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:med-001",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-001",
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "197361",
+              "display": "Amlodipine 5 MG Oral Tablet"
+            }
+          ],
+          "text": "脈優錠 5mg (Amlodipine)"
+        },
+        "subject": {
+          "reference": "Patient/patient-001"
+        },
+        "authoredOn": "2024-12-01",
+        "dosageInstruction": [
+          {
+            "text": "每日一次，每次一錠，口服",
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d"
+              }
+            },
+            "doseAndRate": [
+              {
+                "doseQuantity": {
+                  "value": 1,
+                  "unit": "tablet",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "{tablet}"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest/med-001"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:med-002",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-002",
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "860975",
+              "display": "Metformin 500 MG Oral Tablet"
+            }
+          ],
+          "text": "庫魯化錠 500mg (Metformin)"
+        },
+        "subject": {
+          "reference": "Patient/patient-002"
+        },
+        "authoredOn": "2024-12-05",
+        "dosageInstruction": [
+          {
+            "text": "每日兩次，每次一錠，餐後口服",
+            "timing": {
+              "repeat": {
+                "frequency": 2,
+                "period": 1,
+                "periodUnit": "d"
+              }
+            },
+            "doseAndRate": [
+              {
+                "doseQuantity": {
+                  "value": 1,
+                  "unit": "tablet",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "{tablet}"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest/med-002"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:med-003",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-003",
+        "status": "completed",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "616830",
+              "display": "Albuterol 0.09 MG/ACTUAT Metered Dose Inhaler"
+            }
+          ],
+          "text": "沙丁胺醇吸入劑 (Albuterol)"
+        },
+        "subject": {
+          "reference": "Patient/patient-003"
+        },
+        "authoredOn": "2022-03-10",
+        "dosageInstruction": [
+          {
+            "text": "需要時使用，每次1-2下",
+            "asNeededBoolean": true,
+            "doseAndRate": [
+              {
+                "doseRange": {
+                  "low": {
+                    "value": 1,
+                    "unit": "puff",
+                    "system": "http://unitsofmeasure.org",
+                    "code": "{puff}"
+                  },
+                  "high": {
+                    "value": 2,
+                    "unit": "puff",
+                    "system": "http://unitsofmeasure.org",
+                    "code": "{puff}"
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest/med-003"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:med-004",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-004",
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "283489",
+              "display": "Valproic Acid 500 MG Oral Tablet"
+            }
+          ],
+          "text": "帝拔癲持續性藥效錠 500mg (Valproic Acid)"
+        },
+        "subject": {
+          "reference": "Patient/patient-004"
+        },
+        "authoredOn": "2024-12-07",
+        "dosageInstruction": [
+          {
+            "text": "每日兩次，每次一錠，口服",
+            "timing": {
+              "repeat": {
+                "frequency": 2,
+                "period": 1,
+                "periodUnit": "d"
+              }
+            },
+            "doseAndRate": [
+              {
+                "doseQuantity": {
+                  "value": 1,
+                  "unit": "tablet",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "{tablet}"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest/med-004"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:med-005",
+      "resource": {
+        "resourceType": "MedicationRequest",
+        "id": "med-005",
+        "status": "active",
+        "intent": "order",
+        "medicationCodeableConcept": {
+          "coding": [
+            {
+              "system": "http://www.nlm.nih.gov/research/umls/rxnorm",
+              "code": "746815",
+              "display": "Tiotropium 0.018 MG/ACTUAT Metered Dose Inhaler"
+            }
+          ],
+          "text": "適泌特吸入劑 18mcg (Tiotropium)"
+        },
+        "subject": {
+          "reference": "Patient/patient-005"
+        },
+        "authoredOn": "2024-12-08",
+        "dosageInstruction": [
+          {
+            "text": "每日一次，每次一下，吸入",
+            "timing": {
+              "repeat": {
+                "frequency": 1,
+                "period": 1,
+                "periodUnit": "d"
+              }
+            },
+            "doseAndRate": [
+              {
+                "doseQuantity": {
+                  "value": 1,
+                  "unit": "puff",
+                  "system": "http://unitsofmeasure.org",
+                  "code": "{puff}"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "MedicationRequest/med-005"
+      }
+    }
+  ]
+}

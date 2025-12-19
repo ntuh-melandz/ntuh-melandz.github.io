@@ -1,0 +1,1453 @@
+@page "/"
+@using Ganss.Xss
+@inject SmartAuthService AuthService
+@inject FhirClientService FhirService
+@inject AiSummaryService AiService
+@inject NavigationManager nav
+@using Markdig
+@inject IJSRuntime JS
+
+<PageTitle>病患資料</PageTitle>
+
+@if (!string.IsNullOrEmpty(organization?.Name))
+{
+    <div class="alert alert-info text-center d-flex justify-content-center align-items-center gap-2" style="margin-bottom: 1rem; border-left: none; border-radius: 8px;">
+        <button class="btn btn-sm btn-outline-secondary" style="background: white;" @onclick="ResetPatientSelection">
+            🏭 回病患清單
+        </button>
+        <span style="font-size: 1.2rem; font-weight: bold;">🏥 @organization.Name</span>
+        <button class="btn btn-sm btn-outline-danger" style="background: white;" @onclick="UnlinkHospital" disabled="@isLinking">
+            ❌ 解除連結
+        </button>
+    </div>
+}
+else if (patient != null && !showPatientSelection)
+{
+     <div class="alert alert-warning text-center" style="margin-bottom: 1rem; border-left: none; border-radius: 8px;">
+        <div class="d-flex justify-content-center align-items-center gap-2">
+            <button class="btn btn-sm btn-outline-secondary" style="background: white;" @onclick="ResetPatientSelection">
+                🏭 回病患清單
+            </button>
+            <span>⚠️ 此病患尚未連結至任何醫院</span>
+            @if (!showOrgSelector)
+            {
+                <button class="btn btn-sm btn-outline-primary" @onclick="StartLinkProcess">
+                    🔗 連結醫院
+                </button>
+            }
+        </div>
+        
+        @if (showOrgSelector)
+        {
+            <div class="mt-3 p-4 bg-white rounded shadow-sm" style="max-width: 600px; margin: 1rem auto; border: 1px solid #e2e8f0;">
+                <h5 style="margin-bottom: 1rem; font-size: 1.1rem;">🏥 請選擇要連結的醫院</h5>
+                <div class="d-flex flex-column gap-3">
+                    <select class="form-control" @bind="selectedOrgId" style="font-size: 1.1rem; padding: 0.8rem;">
+                        <option value="">-- 請選擇醫院 --</option>
+                        @if (availableOrgs != null)
+                        {
+                            @foreach (var org in availableOrgs)
+                            {
+                                <option value="@org.Id">@org.Name</option>
+                            }
+                        }
+                    </select>
+                    <div class="d-flex gap-2 justify-content-end">
+                         <button class="btn btn-secondary" @onclick="CancelLinkProcess" style="font-size: 1rem;">取消</button>
+                         <button class="btn btn-primary" @onclick="ConfirmLinkHospital" disabled="@string.IsNullOrEmpty(selectedOrgId)" style="font-size: 1rem; padding-left: 2rem; padding-right: 2rem;">
+                            確定連結
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@if (isLoading)
+{
+    <div class="card">
+        <div style="text-align: center; padding: 3rem;">
+            <div class="spinner" style="margin: 0 auto;"></div>
+            <p style="margin-top: 1rem; color: var(--text-secondary);">@loadingStatus</p>
+            @if (showRetryButton)
+            {
+                <button class="btn btn-outline-primary mt-3" @onclick="ReloadPage">重試</button>
+            }
+        </div>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-state-icon">🔐</div>
+            <h3>歡迎使用臺大醫院AI影像判讀結果整合平台</h3>
+            <p style="margin-bottom: 1.5rem;">請先連接至 FHIR 伺服器以取得病患資料</p>
+            
+            <button class="btn btn-primary btn-lg" @onclick="StartAuthorization" style="padding: 1rem 2.5rem; font-size: 1.1rem;">
+                🚀 開始授權連接
+            </button>
+            
+            <p style="margin-top: 1.5rem; font-size: 0.875rem; color: var(--text-secondary);">
+                將連接至衛福部 SMART on FHIR 測試環境
+            </p>
+        </div>
+    </div>
+}
+else if (showPatientSelection && availablePatients != null)
+{
+    <div class="card">
+        <div class="card-header">
+            <h2>👥 請選擇病患</h2>
+        </div>
+        <div class="card-body">
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <div style="display: flex; gap: 8px; flex: 1;">
+                            <select @bind="selectedSearchOrgId" class="form-select search-input" style="max-width: 380px; padding-right: 1rem; background-position: right 0.75rem center;">
+                                <option value="">-- 所有醫院 --</option>
+                                @if (availableOrgs != null)
+                                {
+                                    @foreach (var org in availableOrgs)
+                                    {
+                                        <option value="@org.Id">@org.Name</option>
+                                    }
+                                }
+                            </select>
+                            <input @bind="searchQuery" @bind:event="oninput" @onkeyup="HandleSearch" 
+                                   placeholder="輸入姓名或 ID 搜尋..." 
+                                   class="form-control search-input" style="flex: 1;" />
+                        </div>
+                        @if (!string.IsNullOrEmpty(searchQuery))
+                        {
+                            <button class="btn-clear" @onclick="ClearSearch" title="清除">✕</button>
+                        }
+                    </div>
+                    <button class="btn btn-primary btn-search" @onclick="SearchPatients">搜尋</button>
+                </div>
+
+            @if (isLoadingPatients)
+            {
+                <div class="text-center py-3">
+                    <div class="spinner"></div>
+                    <p>搜尋中...</p>
+                </div>
+            }
+            else if (availablePatients?.Any() == true)
+            {
+            <div class="patient-list">
+                @foreach (var p in availablePatients)
+                {
+                    <div class="patient-item" @onclick="() => SelectPatient(p.Id)">
+                        <div class="patient-avatar">
+                            @if (p.Gender == "female")
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ed64a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            }
+                            else if (p.Gender == "male")
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4299e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            }
+                            else
+                            {
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            }
+                        </div>
+                        <div class="patient-info">
+                            <div class="patient-main text-dark">
+                                <span class="patient-name">@GetPatientDisplayName(p)</span>
+                            </div>
+                            <div class="patient-sub">
+                                <span class="patient-id">ID: <span class="id-text">@p.Id</span></span>
+                            </div>
+                            <div class="patient-details">
+                                <span class="detail-text">@(p.Gender == "male" ? "男" : p.Gender == "female" ? "女" : "未知")</span>
+                                <span class="separator">|</span>
+                                <span class="detail-text">@GetAge(p.BirthDate)</span>
+                                <span class="separator">|</span>
+                                <span class="detail-text">(@(p.BirthDate ?? "未知"))</span>
+                                 @if (!string.IsNullOrEmpty(p.ManagingOrganization?.Display))
+                                {
+                                    <span class="badge badge-info ms-2">🏥 @p.ManagingOrganization.Display</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="patient-action">
+                            <span class="chevron">›</span>
+                        </div>
+                    </div>
+                }
+            </div>
+            }
+            else
+            {
+                <div class="text-center py-3 text-muted">
+                    找不到符合的病患資料
+                </div>
+            }
+
+            @if (totalPatientCount > 0)
+            {
+                <div class="pagination-container mt-3">
+                    <div class="pagination-info">
+                        顯示第 @((currentPage - 1) * PAGE_SIZE + 1) - @Math.Min(currentPage * PAGE_SIZE, totalPatientCount) 筆，共 @totalPatientCount 筆
+                    </div>
+                    <div class="pagination-controls">
+                        <button class="btn btn-sm btn-outline-secondary" 
+                                @onclick="GoToPreviousPage" 
+                                disabled="@(currentPage <= 1 || isLoadingPatients)">
+                            ◀ 上一頁
+                        </button>
+                        
+                        @{
+                            var pagesToShow = GetPagesToShow();
+                        }
+                        @foreach (var pageItem in pagesToShow)
+                        {
+                            if (pageItem == -1)
+                            {
+                                <span class="pagination-ellipsis">...</span>
+                            }
+                            else
+                            {
+                                var pageNum = pageItem;
+                                <button class="btn btn-sm @(pageNum == currentPage ? "btn-primary" : "btn-outline-primary")"
+                                        @onclick="() => GoToPage(pageNum)"
+                                        disabled="@isLoadingPatients">
+                                    @pageNum
+                                </button>
+                            }
+                        }
+                        
+                        <button class="btn btn-sm btn-outline-secondary" 
+                                @onclick="GoToNextPage" 
+                                disabled="@(currentPage >= totalPages || isLoadingPatients)">
+                            下一頁 ▶
+                        </button>
+                    </div>
+                </div>
+            }
+            @if (isLoadingPatients)
+            {
+                <div class="text-center mt-3">
+                    <div class="spinner"></div>
+                    <p class="text-muted">載入中...</p>
+                </div>
+            }
+        </div>
+    </div>
+    
+    <style>
+        /* Search Bar Styling */
+        .search-container {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 1.5rem;
+            align-items: center;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.8rem 2.5rem 0.8rem 1rem; /* Right padding for clear button */
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-clear {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #a0aec0;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .btn-clear:hover {
+            color: var(--text-primary);
+            background-color: #f7fafc;
+        }
+
+        .btn-search {
+            padding: 0.8rem 1.5rem;
+            font-weight: 600;
+        }
+
+        /* Patient List Styling */
+        .patient-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .patient-item {
+            display: flex;
+            align-items: center;
+            padding: 1.2rem;
+            background: white;
+            border: 1px solid #edf2f7;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .patient-item:hover {
+            background: #f8faff; /* Light blueish tint */
+            border-color: #c3dafe;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .patient-avatar {
+            font-size: 2.5rem;
+            margin-right: 1.25rem;
+            background: #f7fafc;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+
+        .patient-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .patient-main {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+        }
+
+        .patient-name {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .patient-sub {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-bottom: 2px;
+        }
+
+        .patient-id {
+            font-family: monospace;
+            color: #718096;
+        }
+
+        .id-text {
+            color: #4a5568; /* Darker gray for definition */
+            font-weight: 600;
+        }
+
+        .patient-details {
+            display: flex;
+            align-items: center;
+            font-size: 0.95rem;
+            color: #4a5568;
+        }
+
+        .detail-text {
+            font-weight: 500;
+        }
+
+        .separator {
+            margin: 0 8px;
+            color: #cbd5e0;
+        }
+
+        .patient-action {
+            padding-left: 1rem;
+            color: #cbd5e0;
+            transition: color 0.2s;
+        }
+
+        .patient-item:hover .patient-action {
+            color: var(--primary-color);
+        }
+
+        .chevron {
+            font-size: 2rem;
+            line-height: 1;
+            font-weight: 300;
+        }
+
+        /* Pagination Styling */
+        .pagination-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem 0;
+            border-top: 1px solid #edf2f7;
+        }
+
+        .pagination-info {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+
+        .pagination-controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .pagination-controls .btn {
+            min-width: 40px;
+        }
+
+        .pagination-ellipsis {
+            padding: 0.25rem 0.5rem;
+            color: #718096;
+            font-weight: bold;
+        }
+    </style>
+}
+else if (patient != null)
+{
+    <!-- 病患基本資料 -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="d-flex align-items-center gap-2">
+                @if (patient.Gender == "female")
+                {
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ed64a6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                }
+                else if (patient.Gender == "male")
+                {
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4299e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                }
+                else
+                {
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a0aec0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                }
+                病患基本資料
+            </h2>
+
+        </div>
+        <div class="card-body">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">姓名</span>
+                    <span class="info-value">@GetPatientName()</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">性別</span>
+                    <span class="info-value">@GetGenderDisplay()</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">年齡</span>
+                    <span class="info-value">@GetAge(patient.BirthDate)</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">出生日期</span>
+                    <span class="info-value">@(patient.BirthDate ?? "未提供")</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">病歷號</span>
+                    <span class="info-value">@(patient.Id ?? "N/A")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 眼底鏡檢查結果 -->
+    @if (fundusReports?.Any() == true)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h2>👁️ AI眼底鏡檢查結果</h2>
+            </div>
+            <div class="card-body">
+                @foreach (var report in fundusReports)
+                {
+                    <div class="fundus-result-card @GetReferralClass(report.Conclusion)">
+                        <div class="fundus-content">
+                            <div class="fundus-image-container">
+                                @if (fundusMediaCache.TryGetValue(report.Id, out var media) && media?.Content?.Data != null)
+                                {
+                                    <img src="data:@(media.Content.ContentType ?? "image/png");base64,@media.Content.Data" 
+                                         alt="眼底影像" class="fundus-image" 
+                                         style="width: 180px; height: 180px; object-fit: cover; cursor: pointer;"
+                                         @onclick='() => ShowImage($"data:{(media.Content.ContentType ?? "image/png")};base64,{media.Content.Data}")' />
+                                }
+                                else
+                                {
+                                    <div class="fundus-image-placeholder">
+                                        <span>🔍</span>
+                                        <small>影像載入中...</small>
+                                    </div>
+                                }
+                                @if (report.Media?.FirstOrDefault()?.Comment != null)
+                                {
+                                    <div class="fundus-eye-label">@report.Media.First().Comment</div>
+                                }
+                            </div>
+                            <div class="fundus-info">
+                                <div class="fundus-header">
+                                    <span class="referral-badge @GetReferralBadgeClass(report.Conclusion)">
+                                        @GetReferralIcon(report.Conclusion) @(report.Conclusion ?? "待判讀")
+                                    </span>
+                                    <span class="fundus-date">@FormatDateTime(report.EffectiveDateTime)</span>
+                                </div>
+                                <div class="fundus-details">
+                                    @if (report.ConclusionCode?.FirstOrDefault()?.Text != null)
+                                    {
+                                        <p class="conclusion-text">@report.ConclusionCode.First().Text</p>
+                                    }
+                                    @if (report.Performer?.Any() == true)
+                                    {
+                                        <p class="performer-info">
+                                            <strong>執行機構：</strong>@report.Performer.FirstOrDefault()?.Display
+                                        </p>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- 診斷 -->
+    @if (conditions?.Any() == true)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h2>🩺 診斷記錄</h2>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>診斷</th>
+                            <th>狀態</th>
+                            <th>發病日期</th>
+                            <th>痊癒日期</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var condition in conditions)
+                        {
+                            <tr>
+                                <td>@FhirService.GetCodeDisplay(condition.Code)</td>
+                                <td>
+                                    @if (condition.ClinicalStatus?.Coding?.Any() == true)
+                                    {
+                                        var status = condition.ClinicalStatus.Coding.First().Code;
+                                        var badgeClass = status == "active" ? "badge-warning" :
+                                                        status == "resolved" ? "badge-success" : "badge-info";
+                                        <span class="badge @badgeClass">
+                                            @(status == "active" ? "進行中" : status == "resolved" ? "已痊癒" : status)
+                                        </span>
+                                    }
+                                </td>
+                                <td>@(condition.OnsetDateTime ?? "-")</td>
+                                <td>@(condition.AbatementDateTime ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- Image Preview Modal -->
+    @if (!string.IsNullOrEmpty(previewImageSrc))
+    {
+        <div class="image-preview-overlay" @onclick="CloseImage">
+            <div class="image-preview-content">
+                <img src="@previewImageSrc" alt="放大預覽" class="preview-full-image" />
+                <button class="btn-close-preview" @onclick="CloseImage">✕</button>
+            </div>
+        </div>
+    }
+
+    <style>
+        .image-preview-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+        }
+
+        .image-preview-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 90vh;
+        }
+
+        .preview-full-image {
+            max-width: 100%;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border: 2px solid white;
+        }
+
+        .btn-close-preview {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        .btn-close-preview:hover {
+            opacity: 1;
+        }
+    </style>
+
+    <!-- 用藥 -->
+    @if (medications?.Any() == true)
+    {
+        <div class="card">
+            <div class="card-header">
+                <h2>💊 用藥記錄</h2>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>藥物名稱</th>
+                            <th>狀態</th>
+                            <th>用法用量</th>
+                            <th>開立日期</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var med in medications)
+                        {
+                            <tr>
+                                <td>@FhirService.GetCodeDisplay(med.MedicationCodeableConcept)</td>
+                                <td>
+                                    @{
+                                        var badgeClass = med.Status == "active" ? "badge-success" :
+                                                        med.Status == "completed" ? "badge-info" : "badge-warning";
+                                    }
+                                    <span class="badge @badgeClass">
+                                        @(med.Status == "active" ? "使用中" : med.Status == "completed" ? "已完成" : med.Status)
+                                    </span>
+                                </td>
+                                <td>
+                                    @FhirService.GetDosageDisplay(med)
+                                </td>
+                                <td>@(med.AuthoredOn ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
+    <!-- 生命徵象 -->
+    @if (observations?.Any() == true)
+    {
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h2>📊 生命徵象與檢驗</h2>
+            </div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>數值</th>
+                            <th>檢測日期</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var obs in observations)
+                        {
+                            <tr>
+                                <td>@FhirService.GetCodeDisplay(obs.Code)</td>
+                                <td>
+                                    @if (obs.ValueQuantity != null)
+                                    {
+                                        <span>@obs.ValueQuantity.Value @obs.ValueQuantity.Unit</span>
+                                    }
+                                    else if (obs.Component?.Any() == true)
+                                    {
+                                        @foreach (var component in obs.Component)
+                                        {
+                                            <div>
+                                                @FhirService.GetCodeDisplay(component.Code):
+                                                @component.ValueQuantity?.Value @component.ValueQuantity?.Unit
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span>-</span>
+                                    }
+                                </td>
+                                <td>@(obs.EffectiveDateTime ?? "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                
+            </div>
+        </div>
+    }
+
+    <!-- 智慧摘要 -->
+    <div class="card mt-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">🤖 智慧摘要</h2>
+            <button class="btn btn-primary" @onclick="GenerateSummary" disabled="@isGeneratingSummary">
+                @if (isGeneratingSummary)
+                {
+                    <span>⏳ 生成中...</span>
+                }
+                else
+                {
+                    <span>✨ 產生摘要</span>
+                }
+            </button>
+        </div>
+        @if (!string.IsNullOrEmpty(aiSummaryResult))
+        {
+            <div class="card-body">
+                <div class="ai-report-container">
+                    @((MarkupString)ConvertMarkdownToHtml(aiSummaryResult))
+                </div>
+            </div>
+        }
+    </div>
+
+
+    @if ((conditions?.Any() != true) && (medications?.Any() != true) && (observations?.Any() != true))
+    {
+        <div class="card">
+            <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3>暫無額外醫療記錄</h3>
+                <p>此病患目前沒有診斷、用藥或檢驗記錄</p>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private bool isLoading = true;
+    private string loadingStatus = "正在初始化...";
+    private bool showRetryButton = false;
+    private bool isLinking = false;
+    private string? errorMessage;
+
+    private Patient? patient;
+    private Organization? organization;
+    private List<Observation>? observations;
+    private List<Condition>? conditions;
+    private List<MedicationRequest>? medications;
+    private List<DiagnosticReport>? fundusReports;
+    private Dictionary<string, Media> fundusMediaCache = new();
+
+    private string? fhirBaseUrl;
+    private string? patientId;
+
+    // 病患選擇模式
+    private bool showPatientSelection = false;
+    private bool isLoadingPatients = false;
+    private const int PAGE_SIZE = 10;
+    private int currentPage = 1;
+    private int totalPatientCount = 0;
+    private int totalPages => (int)Math.Ceiling((double)totalPatientCount / PAGE_SIZE);
+    private List<Patient>? availablePatients;
+    private bool showOrgSelector = false;
+    private List<Organization>? availableOrgs;
+    private string selectedOrgId = "";
+    private string selectedSearchOrgId = "org-ntuh"; // Default to NTUH
+    private string searchQuery = "";
+
+    // AI Summary
+    private bool isGeneratingSummary = false;
+    private static readonly MarkdownPipeline _markdownPipeline = new MarkdownPipelineBuilder()
+        .UseAdvancedExtensions()
+        .Build();
+    private string? aiSummaryResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 設定 30 秒逾時
+        var cts = new CancellationTokenSource();
+        cts.CancelAfter(TimeSpan.FromSeconds(30));
+
+        try
+        {
+            // 使用 Task.Run 執行主要邏輯，以便可以監控逾時
+            await Task.Run(async () => 
+            {
+                await InitializeAppAsync();
+            }, cts.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            errorMessage = "載入逾時 (30秒)。請檢查網路連線或 FHIR 伺服器狀態。";
+            isLoading = false;
+            showRetryButton = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"發生未預期的錯誤：{ex.Message}";
+            isLoading = false;
+            showRetryButton = true;
+        }
+    }
+
+    private async Task InitializeAppAsync()
+    {
+        try
+        {
+            loadingStatus = "正在讀取設定...";
+            StateHasChanged();
+
+            // 取得儲存的資料
+            fhirBaseUrl = await AuthService.GetStoredFhirBaseUrlAsync();
+            patientId = await AuthService.GetStoredPatientIdAsync();
+            var accessToken = await AuthService.GetStoredAccessTokenAsync();
+
+            if (string.IsNullOrEmpty(fhirBaseUrl))
+            {
+                errorMessage = "未找到 FHIR Server URL。請透過 /launch 啟動應用程式。";
+                isLoading = false;
+                return;
+            }
+
+            loadingStatus = "正在連接 FHIR 伺服器...";
+            StateHasChanged();
+
+            // Load available organizations for search filter
+            availableOrgs = await FhirService.GetOrganizationsAsync(fhirBaseUrl);
+            
+            // 如果沒有 Patient ID，顯示病患選擇列表
+            // Check if patientId is in session storage (from launch)
+            var patientIdInSession = await JS.InvokeAsync<string>("sessionStorage.getItem", "patientId");
+
+            if (string.IsNullOrEmpty(patientId) && string.IsNullOrEmpty(patientIdInSession))
+            {
+                loadingStatus = "正在載入病患清單...";
+                StateHasChanged();
+                
+                showPatientSelection = true;
+                await LoadPatientList();
+                isLoading = false;
+                return;
+            }
+            else if (!string.IsNullOrEmpty(patientIdInSession) && string.IsNullOrEmpty(patientId))
+            {
+                // If patientId is in session but not yet loaded into state, use it
+                patientId = patientIdInSession;
+                await AuthService.StorePatientIdAsync(patientId); // Store it for future visits
+                await JS.InvokeVoidAsync("sessionStorage.removeItem", "patientId"); // Clear from session
+            }
+
+            // Access Token 檢查 - 衛福部測試環境不需要 token
+            if (string.IsNullOrEmpty(accessToken))
+            {
+                Console.WriteLine("警告：未找到 Access Token。使用公開 FHIR Server 模式。");
+            }
+
+            loadingStatus = "正在載入病患詳細資料...";
+            StateHasChanged();
+
+            // 載入病患資料
+            await LoadPatientData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"發生錯誤：{ex.Message}";
+            Console.WriteLine($"Error: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ReloadPage()
+    {
+        nav.NavigateTo(nav.Uri, forceLoad: true);
+    }
+
+    private void StartAuthorization()
+    {
+        // 導向 /launch 開始 SMART on FHIR 授權流程
+        nav.NavigateTo("/launch", forceLoad: true);
+    }
+
+    private async Task LoadPatientList()
+    {
+        currentPage = 1;
+        await LoadPatientPage(1);
+    }
+
+    private async Task LoadPatientPage(int page)
+    {
+        isLoadingPatients = true;
+        StateHasChanged();
+        
+        try
+        {
+            var offset = (page - 1) * PAGE_SIZE;
+            var result = await FhirService.GetPatientsAsync(fhirBaseUrl!, count: PAGE_SIZE, name: searchQuery, offset: offset, organizationId: selectedSearchOrgId);
+            
+            
+            availablePatients = result.Patients;
+            
+            // 使用 FHIR Bundle 返回的總數
+            if (result.Total > 0)
+            {
+                totalPatientCount = result.Total;
+            }
+            else if (availablePatients != null && availablePatients.Any())
+            {
+                // Fallback: 估算總數
+                if (availablePatients.Count >= PAGE_SIZE)
+                {
+                    totalPatientCount = Math.Max(totalPatientCount, page * PAGE_SIZE + PAGE_SIZE);
+                }
+                else
+                {
+                    totalPatientCount = (page - 1) * PAGE_SIZE + availablePatients.Count;
+                }
+            }
+            else if (page == 1)
+            {
+                totalPatientCount = 0;
+            }
+            
+            currentPage = page;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"無法載入病患列表：{ex.Message}";
+        }
+        finally
+        {
+            isLoadingPatients = false;
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page < 1 || page > totalPages || page == currentPage) return;
+        await LoadPatientPage(page);
+    }
+
+    private async Task GoToPreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            await LoadPatientPage(currentPage - 1);
+        }
+    }
+
+    private async Task GoToNextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            await LoadPatientPage(currentPage + 1);
+        }
+    }
+
+    private List<int> GetPagesToShow()
+    {
+        var pages = new List<int>();
+        
+        if (totalPages <= 9)
+        {
+            // 顯示所有頁碼
+            for (int i = 1; i <= totalPages; i++)
+            {
+                pages.Add(i);
+            }
+        }
+        else
+        {
+            // 智慧分頁：1 2 3 ... [current-1] [current] [current+1] ... last-2 last-1 last
+            
+            // 前3頁
+            pages.Add(1);
+            pages.Add(2);
+            pages.Add(3);
+            
+            // 中間部分
+            int rangeStart = Math.Max(4, currentPage - 1);
+            int rangeEnd = Math.Min(totalPages - 3, currentPage + 1);
+            
+            if (rangeStart > 4)
+            {
+                pages.Add(-1); // ellipsis
+            }
+            
+            for (int i = rangeStart; i <= rangeEnd; i++)
+            {
+                if (!pages.Contains(i) && i > 3 && i < totalPages - 2)
+                {
+                    pages.Add(i);
+                }
+            }
+            
+            if (rangeEnd < totalPages - 3)
+            {
+                pages.Add(-1); // ellipsis
+            }
+            
+            // 後3頁
+            if (!pages.Contains(totalPages - 2)) pages.Add(totalPages - 2);
+            if (!pages.Contains(totalPages - 1)) pages.Add(totalPages - 1);
+            if (!pages.Contains(totalPages)) pages.Add(totalPages);
+        }
+        
+        return pages;
+    }
+
+    private async Task HandleSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SearchPatients();
+        }
+    }
+
+    private async Task SearchPatients()
+    {
+        currentPage = 1;
+        totalPatientCount = 0;
+        await LoadPatientPage(1);
+    }
+
+    private async Task ClearSearch()
+    {
+        searchQuery = "";
+        await LoadPatientList();
+    }
+
+    private async Task ResetPatientSelection()
+    {
+        patientId = null;
+        patient = null;
+        organization = null;
+        observations = null;
+        conditions = null;
+        medications = null;
+        fundusReports = null;
+        fundusMediaCache.Clear();
+        aiSummaryResult = null; // 清除 AI 總結
+        showPatientSelection = true;
+        
+        // 清除儲存的病患 ID，但保留 Token
+        await AuthService.RemovePatientIdAsync();
+        
+        if (availablePatients == null)
+        {
+            await LoadPatientList();
+        }
+    }
+
+    private async Task SelectPatient(string selectedPatientId)
+    {
+        isLoading = true;
+        showPatientSelection = false;
+        patientId = selectedPatientId;
+        aiSummaryResult = null; // 清除 AI 總結
+
+        // 儲存選擇的病患 ID
+        await AuthService.StorePatientIdAsync(patientId);
+
+        await LoadPatientData();
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadPatientData()
+    {
+        patient = await FhirService.GetPatientAsync(fhirBaseUrl!, patientId!);
+
+        if (patient == null)
+        {
+            errorMessage = "無法載入病患資料。";
+            return;
+        }
+
+        // 載入機構資料
+        if (patient.ManagingOrganization != null && !string.IsNullOrEmpty(patient.ManagingOrganization.ReferenceValue))
+        {
+            var orgId = patient.ManagingOrganization.ReferenceValue.Split('/').Last();
+            organization = await FhirService.GetOrganizationAsync(fhirBaseUrl!, orgId);
+        }
+
+        // 並行載入其他資料
+        var observationsTask = FhirService.GetObservationsAsync(fhirBaseUrl!, patientId!);
+        var conditionsTask = FhirService.GetConditionsAsync(fhirBaseUrl!, patientId!);
+        var medicationsTask = FhirService.GetMedicationRequestsAsync(fhirBaseUrl!, patientId!);
+        var fundusReportsTask = FhirService.GetDiagnosticReportsAsync(fhirBaseUrl!, patientId!, "92134-4");
+
+        await Task.WhenAll(observationsTask, conditionsTask, medicationsTask, fundusReportsTask);
+
+        observations = await observationsTask ?? new List<Observation>();
+        conditions = await conditionsTask ?? new List<Condition>();
+        medications = await medicationsTask ?? new List<MedicationRequest>();
+        fundusReports = await fundusReportsTask ?? new List<DiagnosticReport>();
+        
+        // 載入眼底影像
+        fundusMediaCache.Clear();
+        foreach (var report in fundusReports)
+        {
+            if (report.Media?.FirstOrDefault()?.Link?.ReferenceValue != null)
+            {
+                var mediaRef = report.Media.First().Link!.ReferenceValue;
+                var mediaId = mediaRef.Split('/').Last();
+                var media = await FhirService.GetMediaAsync(fhirBaseUrl!, mediaId);
+                if (media != null)
+                {
+                    fundusMediaCache[report.Id] = media;
+                }
+            }
+        }
+
+        // 自動觸發智慧摘要
+        _ = GenerateSummary();
+    }
+
+    private string GetPatientName()
+    {
+        if (patient?.Name?.Any() == true)
+        {
+            return FhirService.GetDisplayName(patient.Name.First());
+        }
+        return "未提供";
+    }
+
+    private string GetPatientDisplayName(Patient p)
+    {
+        if (p?.Name?.Any() == true)
+        {
+            return FhirService.GetDisplayName(p.Name.First());
+        }
+        return p?.Id ?? "未知";
+    }
+
+    private string GetGenderDisplay()
+    {
+        return patient?.Gender switch
+        {
+            "male" => "男性",
+            "female" => "女性",
+            "other" => "其他",
+            "unknown" => "未知",
+            _ => "未提供"
+        };
+    }
+
+    private async Task StartLinkProcess()
+    {
+        isLinking = true;
+        try 
+        {
+            availableOrgs = await FhirService.GetOrganizationsAsync(fhirBaseUrl!);
+            
+            // Check if Test Hospital exists
+            bool hasTestHospital = availableOrgs != null && availableOrgs.Any(o => o.Name == "測試醫院");
+
+            if (!hasTestHospital)
+            {
+                 // Create it if not found, regardless of whether list is empty or not
+                 await LinkTestHospital(); 
+                 availableOrgs = await FhirService.GetOrganizationsAsync(fhirBaseUrl!);
+            }
+            
+            showOrgSelector = true;
+        }
+        catch(Exception ex)
+        {
+            errorMessage = $"無法載入醫院列表: {ex.Message}";
+        }
+        finally
+        {
+            isLinking = false;
+        }
+    }
+
+    private void CancelLinkProcess()
+    {
+        showOrgSelector = false;
+        selectedOrgId = "";
+    }
+
+    private async Task ConfirmLinkHospital()
+    {
+        if (string.IsNullOrEmpty(selectedOrgId) || availableOrgs == null) return;
+
+        var org = availableOrgs.FirstOrDefault(o => o.Id == selectedOrgId);
+        if (org == null) return;
+
+        isLinking = true;
+        try
+        {
+            var success = await FhirService.UpdatePatientOrganizationAsync(fhirBaseUrl!, patientId!, org.Id, org.Name ?? "Unknown");
+            if (success)
+            {
+                organization = org;
+                showOrgSelector = false;
+                
+                // Refresh data to ensure consistency
+                await LoadPatientData();
+            }
+            else
+            {
+                errorMessage = "連結失敗";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"連結錯誤: {ex.Message}";
+        }
+        finally
+        {
+            isLinking = false;
+        }
+    }
+
+    private async Task UnlinkHospital()
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", "確定要解除醫院連結嗎？")) return;
+
+        isLinking = true;
+        try
+        {
+            var success = await FhirService.ClearPatientOrganizationAsync(fhirBaseUrl!, patientId!);
+            if (success)
+            {
+                organization = null;
+                // Refresh data
+                await LoadPatientData();
+            }
+            else
+            {
+                errorMessage = "解除連結失敗";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"解除錯誤: {ex.Message}";
+        }
+        finally
+        {
+            isLinking = false;
+        }
+    }
+
+    // Keep this for fallback creation
+    private async Task LinkTestHospital()
+    {
+        try
+        {
+            var org = new Organization
+            {
+                Name = "測試醫院",
+                Type = new List<CodeableConcept>
+                {
+                    new CodeableConcept
+                    {
+                        Coding = new List<Coding>
+                        {
+                            new Coding { System = "http://terminology.hl7.org/CodeSystem/organization-type", Code = "prov", Display = "Healthcare Provider" }
+                        }
+                    }
+                }
+            };
+            await FhirService.CreateOrganizationAsync(fhirBaseUrl!, org);
+        }
+        catch {}
+    }
+
+    private async Task GenerateSummary()
+    {
+        if (patient == null || isGeneratingSummary) return;
+
+        isGeneratingSummary = true;
+        aiSummaryResult = null;
+        StateHasChanged();
+
+        try
+        {
+            aiSummaryResult = await AiService.SummarizePatientDataAsync(
+                patient, 
+                conditions ?? new List<Condition>(), 
+                medications ?? new List<MedicationRequest>(), 
+                observations ?? new List<Observation>(),
+                fundusReports ?? new List<DiagnosticReport>()
+            );
+        }
+        catch (Exception ex)
+        {
+            aiSummaryResult = $"生成失敗: {ex.Message}";
+        }
+        finally
+        {
+            isGeneratingSummary = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetAge(string? birthDateString)
+    {
+        if (string.IsNullOrEmpty(birthDateString) || !DateTime.TryParse(birthDateString, out var birthDate))
+        {
+            return "?";
+        }
+        
+        var today = DateTime.Today;
+        var years = today.Year - birthDate.Year;
+        var months = today.Month - birthDate.Month;
+        
+        if (today.Day < birthDate.Day)
+        {
+            months--;
+        }
+        
+        if (months < 0)
+        {
+            years--;
+            months += 12;
+        }
+        
+        if (years < 0) return "?";
+        
+        if (months == 0)
+        {
+            return $"{years}歲";
+        }
+        return $"{years}歲{months}個月";
+    }
+
+    private string ConvertMarkdownToHtml(string markdown)
+    {
+        if (string.IsNullOrEmpty(markdown)) return "";
+
+        // 如果包含 assistantfinal，只擷取之後的內容
+        string finalContent = markdown;
+        const string marker = "assistantfinal";
+        int markerIndex = markdown.IndexOf(marker);
+        if (markerIndex >= 0)
+        {
+            finalContent = markdown.Substring(markerIndex + marker.Length).Trim();
+        }
+
+        var html = Markdown.ToHtml(finalContent, _markdownPipeline);
+        var sanitizer = new HtmlSanitizer();
+        return sanitizer.Sanitize(html);
+    }
+
+    // Fundus/Referral helper methods
+    private string GetReferralClass(string? conclusion)
+    {
+        return conclusion switch
+        {
+            "建議轉診" => "referral-needed",
+            "緊急轉診" => "referral-urgent",
+            "追蹤觀察" => "referral-followup",
+            "無需轉診" => "referral-normal",
+            _ => ""
+        };
+    }
+
+    private string GetReferralBadgeClass(string? conclusion)
+    {
+        return conclusion switch
+        {
+            "建議轉診" => "badge-refer",
+            "緊急轉診" => "badge-urgent",
+            "追蹤觀察" => "badge-followup",
+            "無需轉診" => "badge-normal",
+            _ => "badge-info"
+        };
+    }
+
+    private string GetReferralIcon(string? conclusion)
+    {
+        return conclusion switch
+        {
+            "建議轉診" => "⚠️",
+            "緊急轉診" => "🚨",
+            "追蹤觀察" => "👁️",
+            "無需轉診" => "✅",
+            _ => "📋"
+        };
+    }
+
+    private string? previewImageSrc;
+
+    private string FormatDateTime(string? dateTimeStr)
+    {
+        if (DateTime.TryParse(dateTimeStr, out var date))
+        {
+            return date.ToString("yyyy/MM/dd HH:mm");
+        }
+        return dateTimeStr ?? "-";
+    }
+
+    private void ShowImage(string src)
+    {
+        previewImageSrc = src;
+    }
+
+    private void CloseImage()
+    {
+        previewImageSrc = null;
+    }
+}
