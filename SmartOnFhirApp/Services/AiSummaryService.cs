@@ -590,11 +590,54 @@ namespace SmartOnFhirApp.Services
                 }
             }
 
+            // 自動計算 BMI
+            if (obs != null)
+            {
+                var heights = obs.Where(o => (o.Code?.Text?.Contains("Body Height", StringComparison.OrdinalIgnoreCase) == true || 
+                                             o.Code?.Text?.Contains("Height", StringComparison.OrdinalIgnoreCase) == true ||
+                                             o.Code?.Text?.Contains("身高") == true) && 
+                                             o.Value is Hl7.Fhir.Model.Quantity)
+                                 .Select(o => (Hl7.Fhir.Model.Quantity)o.Value)
+                                 .OrderByDescending(q => q.Value) // 取最新的或合理的
+                                 .FirstOrDefault();
+
+                var weights = obs.Where(o => (o.Code?.Text?.Contains("Body Weight", StringComparison.OrdinalIgnoreCase) == true || 
+                                             o.Code?.Text?.Contains("Weight", StringComparison.OrdinalIgnoreCase) == true ||
+                                             o.Code?.Text?.Contains("體重") == true) && 
+                                             o.Value is Hl7.Fhir.Model.Quantity)
+                                 .Select(o => (Hl7.Fhir.Model.Quantity)o.Value)
+                                 .OrderByDescending(q => q.Value)
+                                 .FirstOrDefault();
+
+                if (heights?.Value.HasValue == true && weights?.Value.HasValue == true)
+                {
+                    double h = (double)heights.Value.Value;
+                    double w = (double)weights.Value.Value;
+                    
+                    // 單位轉換
+                    if (heights.Unit?.Contains("cm", StringComparison.OrdinalIgnoreCase) == true) h = h / 100.0;
+                    if (weights.Unit?.Contains("g", StringComparison.OrdinalIgnoreCase) == true && !weights.Unit.Equals("kg", StringComparison.OrdinalIgnoreCase)) w = w / 1000.0; // 簡單防呆
+
+                    if (h > 0 && w > 0)
+                    {
+                        double bmi = w / (h * h);
+                        string status;
+                        if (bmi < 18.5) status = "過輕";
+                        else if (bmi < 24) status = "正常";
+                        else if (bmi < 27) status = "過重";
+                        else status = "輕度肥胖以上";
+
+                        vitalSigns.Add($"- [系統計算] BMI: {bmi:F1} ({status}) - 基於身高 {h*100:F0}cm, 體重 {w:F1}kg");
+                    }
+                }
+            }
+
+            // 確保有找到任何vital signs，如果沒有就加默認
+            if (!vitalSigns.Any())
+                vitalSigns.Add("- 無記錄");
+
             sb.AppendLine("\n[基本體徵]");
-            if (vitalSigns.Any())
-                vitalSigns.ForEach(v => sb.AppendLine(v));
-            else
-                sb.AppendLine("- 無記錄");
+            vitalSigns.ForEach(v => sb.AppendLine(v));
 
             sb.AppendLine("\n[檢查報告]");
             if (reports != null && reports.Any())
@@ -603,6 +646,7 @@ namespace SmartOnFhirApp.Services
                 {
                     // 優先使用 ConclusionCode 的文字描述，若無則使用 Conclusion
                     var conclusion = r.ConclusionCode?.FirstOrDefault()?.Text ?? r.Conclusion ?? "無結論";
+
                     var date = !string.IsNullOrEmpty(r.EffectiveDateTime) && DateTime.TryParse(r.EffectiveDateTime, out var dt) 
                         ? dt.ToString("yyyy-MM-dd") : r.EffectiveDateTime;
                     sb.AppendLine($"- {r.Code?.Text ?? "檢查項"}: {conclusion} ({date})");
