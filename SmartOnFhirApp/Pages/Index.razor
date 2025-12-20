@@ -12,14 +12,21 @@
 
 @if (!string.IsNullOrEmpty(organization?.Name))
 {
-    <div class="alert alert-info text-center d-flex justify-content-center align-items-center gap-2" style="margin-bottom: 1rem; border-left: none; border-radius: 8px;">
-        <button class="btn btn-sm btn-outline-secondary" style="background: white;" @onclick="ResetPatientSelection">
-            🏭 回病患清單
-        </button>
-        <span style="font-size: 1.2rem; font-weight: bold;">🏥 @organization.Name</span>
-        <button class="btn btn-sm btn-outline-danger" style="background: white;" @onclick="UnlinkHospital" disabled="@isLinking">
-            ❌ 解除連結
-        </button>
+    <div class="alert alert-info" style="margin-bottom: 1rem; border-left: none; border-radius: 8px; padding: 0.75rem 1rem;">
+        <div class="hospital-nav-buttons">
+            <div class="nav-row-1">
+                <button class="btn btn-sm btn-outline-secondary" style="background: white;" @onclick="ResetPatientSelection">
+                    🏭 回病患清單
+                </button>
+            </div>
+            <div class="nav-row-2">
+                <span class="hospital-name">🏥 @organization.Name</span>
+                <button class="btn btn-sm btn-unlink" @onclick="UnlinkHospital" disabled="@isLinking" title="解除連結">
+                    <span class="unlink-full">❌ 解除連結</span>
+                    <span class="unlink-mobile">✕</span>
+                </button>
+            </div>
+        </div>
     </div>
 }
 else if (patient != null && !showPatientSelection)
@@ -434,6 +441,91 @@ else if (showPatientSelection && availablePatients != null)
             padding: 0.25rem 0.5rem;
             color: #718096;
             font-weight: bold;
+        }
+
+        /* Mobile Responsive Styles */
+        @@media (max-width: 576px) {
+            .search-container {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .search-input-wrapper > div {
+                flex-direction: column !important;
+                gap: 8px !important;
+            }
+
+            .search-input-wrapper .form-select,
+            .search-input-wrapper .form-control {
+                max-width: 100% !important;
+            }
+
+            .btn-search {
+                width: 100%;
+            }
+
+            .patient-item {
+                padding: 0.8rem;
+                flex-wrap: wrap;
+            }
+
+            .patient-avatar {
+                width: 40px;
+                height: 40px;
+                margin-right: 0.75rem;
+            }
+
+            .patient-avatar svg {
+                width: 20px;
+                height: 20px;
+            }
+
+            .patient-info {
+                min-width: 0;
+            }
+
+            .patient-name {
+                font-size: 1rem;
+            }
+
+            .patient-sub {
+                font-size: 0.75rem;
+            }
+
+            .patient-details {
+                flex-wrap: wrap;
+                font-size: 0.75rem;
+                gap: 4px;
+            }
+
+            .patient-details .badge {
+                font-size: 0.65rem;
+                padding: 0.2rem 0.4rem;
+                margin-left: 0 !important;
+                margin-top: 4px;
+            }
+
+            .separator {
+                margin: 0 4px;
+            }
+
+            .patient-action {
+                display: none;
+            }
+
+            .chevron {
+                font-size: 1.5rem;
+            }
+
+            .pagination-controls {
+                gap: 0.25rem;
+            }
+
+            .pagination-controls .btn {
+                min-width: 32px;
+                padding: 0.25rem 0.5rem;
+                font-size: 0.8rem;
+            }
         }
     </style>
 }
