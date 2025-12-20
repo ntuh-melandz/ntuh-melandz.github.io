@@ -295,25 +295,154 @@ body {
 
 @media (max-width: 768px) {
     .container {
-        padding: 0 1rem;
+        padding: 0 0.75rem;
+        margin: 1rem auto;
+    }
+
+    .header {
+        padding: 1rem;
+    }
+
+    .header h1 {
+        font-size: 1.1rem;
+        line-height: 1.4;
+    }
+
+    .header small {
+        font-size: 0.75rem;
     }
 
     .card {
-        padding: 1.5rem;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+
+    .card-header {
+        padding-bottom: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .card-header h2 {
+        font-size: 1.1rem;
     }
 
     .info-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+    }
+
+    .info-value {
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .d-flex.gap-2 {
+        gap: 0.5rem !important;
+    }
+
+    .d-flex.flex-wrap {
+        flex-wrap: wrap !important;
     }
 
     .table {
-        font-size: 0.875rem;
+        font-size: 0.75rem;
     }
 
     .table th,
     .table td {
-        padding: 0.75rem;
+        padding: 0.5rem;
     }
+
+    /* Fundus image styles */
+    .fundus-content {
+        flex-direction: column;
+    }
+
+    .fundus-image {
+        width: 100%;
+        height: auto;
+        max-width: 200px;
+        margin: 0 auto;
+    }
+
+    /* AI Report styles */
+    .ai-report-container {
+        padding: 1rem;
+        font-size: 0.9rem;
+    }
+
+    .ai-report-container h2 {
+        font-size: 1rem;
+    }
+
+    .hospital-nav-buttons {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        align-items: flex-start !important;
+    }
+
+    .unlink-full {
+        display: none !important;
+    }
+
+    .unlink-mobile {
+        display: inline !important;
+    }
+}
+
+/* Hospital Navigation Buttons */
+.hospital-nav-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.nav-row-1 {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.nav-row-2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.hospital-name {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #2c5282;
+}
+
+.btn-unlink {
+    background: white;
+    border: 1px solid #e53e3e;
+    color: #e53e3e;
+}
+
+.btn-unlink:hover {
+    background: #fed7d7;
+}
+
+.unlink-full {
+    display: inline;
+}
+
+.unlink-mobile {
+    display: none;
+    color: #e53e3e;
+    font-weight: bold;
+    font-size: 1rem;
 }
 
 /* AI Medical Report Styles */
