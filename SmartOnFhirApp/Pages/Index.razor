@@ -54,8 +54,21 @@ else if (patient != null && !showPatientSelection)
                         <option value="">-- 請選擇醫院 --</option>
                         @if (availableOrgs != null)
                         {
-                            @foreach (var org in availableOrgs)
+                            // First try to find NTUH
+                            var ntuh = availableOrgs.FirstOrDefault(o => o.Id == "org-ntuh" || 
+                                                                   o.Name?.Contains("臺灣大學醫學院附設醫院") == true ||
+                                                                   o.Name?.Contains("臺大醫院") == true);
+                            
+                            if (ntuh != null)
                             {
+                                <option value="@ntuh.Id">@ntuh.Name</option>
+                            }
+
+                            // Loop through others
+                            @foreach (var org in availableOrgs.OrderBy(o => o.Name))
+                            {
+                                // Skip if it's the one we already showed
+                                if (org == ntuh) continue;
                                 <option value="@org.Id">@org.Name</option>
                             }
                         }
@@ -822,7 +835,7 @@ else if (patient != null)
                                         <span>-</span>
                                     }
                                 </td>
-                                <td>@(obs.EffectiveDateTime ?? "-")</td>
+                                <td>@FormatDate(obs.EffectiveDateTime)</td>
                             </tr>
                         }
                     </tbody>
@@ -961,10 +974,28 @@ else if (patient != null)
 
             // Load available organizations for search filter
             var orgs = await FhirService.GetOrganizationsAsync(fhirBaseUrl);
-            // Sort: NTUH first, then others alphabetically
-            availableOrgs = orgs?.OrderByDescending(o => o.Name?.Contains("臺灣大學醫學院附設醫院") == true || o.Name?.Contains("臺大") == true)
-                                 .ThenBy(o => o.Name)
+            
+            if (orgs != null)
+            {
+                // FORCE UI UPDATE: Clear list first
+                availableOrgs = null;
+                StateHasChanged();
+                await Task.Delay(50); // Small delay to allow UI to clear
+
+                // NTUH first (by ID "org-ntuh" or Name), then others
+                var ntuh = orgs.Where(o => o.Id == "org-ntuh" || 
+                                         o.Name?.Contains("臺灣大學醫學院附設醫院") == true ||
+                                         o.Name?.Contains("臺大醫院") == true)
+                             .ToList();
+                    
+                var others = orgs.Except(ntuh) // Use Except to avoid duplicates safely
+                                 .OrderBy(o => o.Name)
                                  .ToList();
+
+                availableOrgs = ntuh.Concat(others).ToList();
+                
+                await InvokeAsync(StateHasChanged);
+            }
             
             // 如果沒有 Patient ID，顯示病患選擇列表
             // Check if patientId is in session storage (from launch)
@@ -1560,6 +1591,15 @@ else if (patient != null)
         if (DateTime.TryParse(dateTimeStr, out var date))
         {
             return date.ToString("yyyy/MM/dd HH:mm");
+        }
+        return dateTimeStr ?? "-";
+    }
+
+    private string FormatDate(string? dateTimeStr)
+    {
+        if (DateTime.TryParse(dateTimeStr, out var date))
+        {
+            return date.ToString("yyyy-MM-dd");
         }
         return dateTimeStr ?? "-";
     }
