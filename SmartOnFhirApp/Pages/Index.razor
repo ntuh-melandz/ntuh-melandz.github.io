@@ -868,7 +868,11 @@ else if (patient != null)
             StateHasChanged();
 
             // Load available organizations for search filter
-            availableOrgs = await FhirService.GetOrganizationsAsync(fhirBaseUrl);
+            var orgs = await FhirService.GetOrganizationsAsync(fhirBaseUrl);
+            // Sort: NTUH first, then others alphabetically
+            availableOrgs = orgs?.OrderByDescending(o => o.Name?.Contains("臺灣大學醫學院附設醫院") == true || o.Name?.Contains("臺大") == true)
+                                 .ThenBy(o => o.Name)
+                                 .ToList();
             
             // 如果沒有 Patient ID，顯示病患選擇列表
             // Check if patientId is in session storage (from launch)
