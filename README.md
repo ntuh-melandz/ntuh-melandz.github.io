@@ -1,12 +1,12 @@
 # 臺大醫院AI影像判讀結果整合平台 (SMART on FHIR)
 
-這個專案是一個完整的 SMART on FHIR 應用程式實作，使用 **Blazor Server (.NET 10)** 開發，支援衛福部 SMART on FHIR 測試環境。
+這個專案是一個完整的 SMART on FHIR 應用程式實作，使用 **Blazor WebAssembly (.NET 8)** 開發，支援衛福部 SMART on FHIR 測試環境，並整合 AI 臨床摘要功能。
 
 ## 🚀 快速開始
 
 ### 先決條件
 
-- **.NET 10.0 SDK**
+- **.NET 8.0 SDK** (LTS 版本)
 - FHIR R4 相容的 FHIR Server (或使用公開 Sandbox)
 
 ### 步驟 0: 資料準備 (Data Preparation)
@@ -113,13 +113,16 @@ sequenceDiagram
 
 ## 🌐 部署指南
 
-本專案為 Blazor Server 應用程式，需要 ASP.NET Core 伺服器環境：
+本專案為 **Blazor WebAssembly** 應用程式，可部署為純靜態網站：
 
 1. **發布**：
    ```bash
    dotnet publish -c Release
    ```
-2. **部署**：將 `/bin/Release/net10.0/publish` 資料夾部署至 Azure App Service、IIS、Docker 容器或任何支援 ASP.NET Core 的主機。
+2. **部署**：將 `/bin/Release/net8.0/wwwroot` 資料夾部署至 GitHub Pages、Azure Static Web Apps 或任何靜態網站主機。
+
+> [!NOTE]
+> 本專案使用 GitHub Actions 自動部署到 GitHub Pages，請參考 `.github/workflows/deploy.yml`。
 
 ---
 
@@ -142,14 +145,14 @@ sequenceDiagram
 
 ```
 SmartOnFhir/
-├── SmartOnFhirApp/           # 主要應用程式 (Blazor Server)
-│   ├── Pages/                # Razor 頁面 (Index.razor, Launch.razor, Redirect.razor, _Host.cshtml)
-│   ├── Services/             # FHIR 服務、AI 摘要服務與 OAuth 處理
-│   ├── Models/               # 資料模型 (TokenResponse, SmartConfiguration 等)
-│   ├── wwwroot/              # 靜態檔案 (css, js)
-│   └── SmartOnFhirApp.csproj # 專案檔 (.NET 10)
+├── SmartOnFhirApp/           # 主要應用程式 (Blazor WebAssembly)
+│   ├── Pages/                # Razor 頁面 (Index.razor, Launch.razor, Redirect.razor)
+│   ├── Services/             # FHIR 服務、AI 摘要服務、AuditEvent 記錄
+│   ├── Models/               # FHIR 資料模型 (Patient, Observation, AuditEvent 等)
+│   ├── wwwroot/              # 靜態檔案 (css, appsettings.json)
+│   └── SmartOnFhirApp.csproj # 專案檔 (.NET 8)
 ├── docs/                     # 說明文件與規範
-├── fhir-test-data/           # 測試資料 JSON 與匯入腳本
+├── fhir-test-data/           # 測試資料 JSON 與匯入腳本 (詳見 fhir-test-data/README.md)
 └── README.md                 # 本文件
 ```
 
@@ -164,4 +167,4 @@ SmartOnFhir/
 ---
 
 **授權**: MIT License  
-**版本**: 3.0 (Blazor Server - Updated for .NET 10)
+**版本**: 4.0 (Blazor WebAssembly - .NET 8 LTS with AI Integration)
