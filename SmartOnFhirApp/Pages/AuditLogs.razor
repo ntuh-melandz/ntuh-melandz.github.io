@@ -42,7 +42,7 @@
                 @if (auditEvents.Any())
                 {
                     <!-- Desktop Table View -->
-                    <div class="table-responsive d-none d-md-block">
+                    <div class="table-responsive desktop-view">
                         <table class="table table-striped table-hover">
                             <thead class="table-dark">
                                 <tr>
@@ -83,7 +83,7 @@
                     </div>
 
                     <!-- Mobile Card View -->
-                    <div class="d-md-none mobile-audit-list">
+                    <div class="mobile-view mobile-audit-list">
                         @foreach (var evt in auditEvents)
                         {
                             <div class="mobile-audit-card">
@@ -137,6 +137,24 @@
 </div>
 
 <style>
+    /* Default: Show Desktop, Hide Mobile */
+    .desktop-view {
+        display: block;
+    }
+    .mobile-view {
+        display: none;
+    }
+
+    /* Mobile Styles (Max width 768px matches Bootstrap MD breakpoint) */
+    @@media (max-width: 768px) {
+        .desktop-view {
+            display: none !important;
+        }
+        .mobile-view {
+            display: block !important;
+        }
+    }
+
     .mobile-audit-card {
         background: white;
         border: 1px solid #e2e8f0;
