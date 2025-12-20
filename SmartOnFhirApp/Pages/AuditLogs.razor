@@ -1,0 +1,159 @@
+@page "/audit-logs"
+@inject FhirClientService FhirService
+@inject SmartAuthService AuthService
+@inject NavigationManager nav
+
+<PageTitle>存取記錄 - SMART on FHIR</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>📋 存取記錄</h1>
+        <button class="btn btn-outline-secondary" @onclick="GoBack">
+            ← 回首頁
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>AuditEvent Records</span>
+            <button class="btn btn-primary btn-sm" @onclick="LoadAuditEvents" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span>⏳ 載入中...</span>
+                }
+                else
+                {
+                    <span>🔄 重新整理</span>
+                }
+            </button>
+        </div>
+        <div class="card-body">
+            @if (errorMessage != null)
+            {
+                <div class="alert alert-warning">@errorMessage</div>
+            }
+            
+            @if (auditEvents == null && !isLoading)
+            {
+                <p class="text-muted">點擊「重新整理」按鈕載入存取記錄</p>
+            }
+            else if (auditEvents != null)
+            {
+                @if (auditEvents.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>時間</th>
+                                    <th>動作</th>
+                                    <th>來源 App</th>
+                                    <th>來源 IP</th>
+                                    <th>病患</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var evt in auditEvents)
+                                {
+                                    <tr>
+                                        <td>@FormatDateTime(evt.Recorded)</td>
+                                        <td>
+                                            <span class="badge bg-info">
+                                                @(evt.Action == "R" ? "讀取" : evt.Action == "C" ? "建立" : evt.Action)
+                                            </span>
+                                        </td>
+                                        <td>@(evt.Agent?.FirstOrDefault()?.Name ?? "Unknown")</td>
+                                        <td>
+                                            @{
+                                                var ip = evt.Agent?.FirstOrDefault()?.Who?.Display ?? "-";
+                                            }
+                                            <code>@ip</code>
+                                        </td>
+                                        <td>
+                                            @{
+                                                var patientRef = evt.Entity?.FirstOrDefault()?.What?.ReferenceValue ?? "-";
+                                                var patientName = evt.Entity?.FirstOrDefault()?.Name ?? "";
+                                            }
+                                            @patientRef
+                                            @if (!string.IsNullOrEmpty(patientName))
+                                            {
+                                                <br/><small class="text-muted">(@patientName)</small>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small">共 @auditEvents.Count 筆記錄</p>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <div style="font-size: 3rem;">📭</div>
+                        <h4>暫無存取記錄</h4>
+                        <p class="text-muted">當您瀏覽病患資料時，系統會自動記錄存取事件</p>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = false;
+    private string? errorMessage;
+    private string? fhirBaseUrl;
+    private List<AuditEvent>? auditEvents;
+
+    protected override async Task OnInitializedAsync()
+    {
+        fhirBaseUrl = await AuthService.GetStoredFhirBaseUrlAsync();
+        
+        if (string.IsNullOrEmpty(fhirBaseUrl))
+        {
+            errorMessage = "未找到 FHIR Server URL。請先透過 /launch 啟動應用程式。";
+            return;
+        }
+
+        await LoadAuditEvents();
+    }
+
+    private async Task LoadAuditEvents()
+    {
+        if (string.IsNullOrEmpty(fhirBaseUrl)) return;
+
+        isLoading = true;
+        errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            auditEvents = await FhirService.GetAuditEventsAsync(fhirBaseUrl);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"載入失敗: {ex.Message}";
+            auditEvents = new List<AuditEvent>();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void GoBack()
+    {
+        nav.NavigateTo("/");
+    }
+
+    private string FormatDateTime(string? dateTimeStr)
+    {
+        if (DateTime.TryParse(dateTimeStr, out var date))
+        {
+            return date.ToLocalTime().ToString("yyyy/MM/dd HH:mm:ss");
+        }
+        return dateTimeStr ?? "-";
+    }
+}

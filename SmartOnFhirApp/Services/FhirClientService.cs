@@ -611,7 +611,8 @@ public class FhirClientService
         string fhirBaseUrl, 
         string patientId, 
         string? patientName = null,
-        string appName = "SmartOnFhirApp")
+        string appName = "SmartOnFhirApp",
+        string? sourceIp = null)
     {
         try
         {
@@ -626,7 +627,11 @@ public class FhirClientService
                     new AuditEventAgent
                     {
                         Name = appName,
-                        Requestor = true
+                        Requestor = true,
+                        Who = string.IsNullOrEmpty(sourceIp) ? null : new Reference 
+                        { 
+                            Display = sourceIp 
+                        }
                     }
                 },
                 Source = new AuditEventSource
@@ -674,6 +679,55 @@ public class FhirClientService
             Console.WriteLine($"[AuditEvent] ❌ Exception: {ex.Message}");
             return (false, 0, ex.Message);
         }
+    }
+
+    /// <summary>
+    /// Fetches AuditEvent records from the FHIR server.
+    /// </summary>
+    public async Task<List<AuditEvent>?> GetAuditEventsAsync(string fhirBaseUrl, int count = 20)
+    {
+        try
+        {
+            var client = await GetAuthenticatedHttpClientAsync();
+            var url = $"{fhirBaseUrl}/AuditEvent?_count={count}&_sort=-date";
+
+            Console.WriteLine($"[AuditEvent] Fetching from {url}...");
+            var response = await client.GetAsync(url);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                using var doc = System.Text.Json.JsonDocument.Parse(content);
+
+                var events = new List<AuditEvent>();
+                if (doc.RootElement.TryGetProperty("entry", out var entryArray))
+                {
+                    foreach (var entry in entryArray.EnumerateArray())
+                    {
+                        if (entry.TryGetProperty("resource", out var resource))
+                        {
+                            var evt = System.Text.Json.JsonSerializer.Deserialize<AuditEvent>(resource.GetRawText());
+                            if (evt != null)
+                            {
+                                events.Add(evt);
+                            }
+                        }
+                    }
+                }
+                Console.WriteLine($"[AuditEvent] Found {events.Count} records.");
+                return events;
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[AuditEvent] Failed to fetch: {response.StatusCode} - {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AuditEvent] Fetch error: {ex.Message}");
+        }
+        return null;
     }
 }
 

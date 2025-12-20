@@ -167,4 +167,4 @@ SmartOnFhir/
 ---
 
 **授權**: MIT License  
-**版本**: 4.0 (Blazor WebAssembly - .NET 8 LTS with AI Integration)
+**版本**: 1.0 (Blazor WebAssembly - .NET 8 LTS with AI Integration)

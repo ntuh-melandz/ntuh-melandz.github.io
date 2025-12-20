@@ -4,6 +4,7 @@
 @inject FhirClientService FhirService
 @inject AiSummaryService AiService
 @inject NavigationManager nav
+@inject HttpClient Http
 @using Markdig
 @inject IJSRuntime JS
 
@@ -1163,11 +1164,26 @@ else if (patient != null)
         }
 
         // 嘗試記錄存取事件到 FHIR Server (AuditEvent)
+        // Pre-fetch IP in main context (JS interop needs sync context)
+        string? clientIp = null;
+        try
+        {
+            clientIp = await JS.InvokeAsync<string>("getClientIp");
+        }
+        catch { /* Ignore IP fetch errors */ }
+
         _ = Task.Run(async () =>
         {
-            var patientName = FhirService.GetDisplayName(patient?.Name?.FirstOrDefault());
-            var result = await FhirService.PostAuditEventAsync(fhirBaseUrl!, patientId!, patientName);
-            Console.WriteLine($"[AuditEvent] Posted: Success={result.Success}, Status={result.StatusCode}");
+            try
+            {
+                var patientName = FhirService.GetDisplayName(patient?.Name?.FirstOrDefault());
+                var result = await FhirService.PostAuditEventAsync(fhirBaseUrl!, patientId!, patientName, "SmartOnFhirApp", clientIp);
+                Console.WriteLine($"[AuditEvent] Posted: Success={result.Success}, Status={result.StatusCode}, IP={clientIp ?? "unknown"}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AuditEvent] Error: {ex.Message}");
+            }
         });
 
         // 自動觸發智慧摘要
