@@ -41,7 +41,8 @@
             {
                 @if (auditEvents.Any())
                 {
-                    <div class="table-responsive">
+                    <!-- Desktop Table View -->
+                    <div class="table-responsive d-none d-md-block">
                         <table class="table table-striped table-hover">
                             <thead class="table-dark">
                                 <tr>
@@ -80,7 +81,47 @@
                             </tbody>
                         </table>
                     </div>
-                    <p class="text-muted small">共 @auditEvents.Count 筆記錄</p>
+
+                    <!-- Mobile Card View -->
+                    <div class="d-md-none mobile-audit-list">
+                        @foreach (var evt in auditEvents)
+                        {
+                            <div class="mobile-audit-card">
+                                <div class="mobile-audit-header">
+                                    <span class="audit-time">@FormatDateTime(evt.Recorded)</span>
+                                    <span class="badge bg-info">
+                                        @(evt.Action == "R" ? "讀取" : evt.Action == "C" ? "建立" : evt.Action)
+                                    </span>
+                                </div>
+                                <div class="mobile-audit-body">
+                                    <div class="audit-row">
+                                        <span class="audit-label">來源 App:</span>
+                                        <span class="audit-value">@(evt.Agent?.FirstOrDefault()?.Name ?? "Unknown")</span>
+                                    </div>
+                                    <div class="audit-row">
+                                        <span class="audit-label">來源 IP:</span>
+                                        <span class="audit-value">
+                                            @{
+                                                var ip = evt.Agent?.FirstOrDefault()?.Who?.Display ?? "-";
+                                            }
+                                            <code>@ip</code>
+                                        </span>
+                                    </div>
+                                    <div class="audit-row">
+                                        <span class="audit-label">病患:</span>
+                                        <span class="audit-value">
+                                            @{
+                                                var patientRef = evt.Entity?.FirstOrDefault()?.What?.ReferenceValue ?? "-";
+                                            }
+                                            @patientRef
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <p class="text-muted small mt-3">共 @auditEvents.Count 筆記錄</p>
                 }
                 else
                 {
@@ -94,6 +135,54 @@
         </div>
     </div>
 </div>
+
+<style>
+    .mobile-audit-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    .mobile-audit-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .audit-time {
+        font-size: 0.85rem;
+        color: #718096;
+        font-weight: 500;
+    }
+
+    .audit-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .audit-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .audit-label {
+        color: #718096;
+        font-weight: 500;
+    }
+
+    .audit-value {
+        color: #2d3748;
+        font-weight: 600;
+        text-align: right;
+    }
+</style>
 
 @code {
     private bool isLoading = false;
