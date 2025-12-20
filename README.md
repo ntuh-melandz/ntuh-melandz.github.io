@@ -1,170 +1,185 @@
-# 臺大醫院AI影像判讀結果整合平台 (SMART on FHIR)
+# 臺大醫院 AI 影像判讀結果整合平台 (SMART on FHIR)
 
-這個專案是一個完整的 SMART on FHIR 應用程式實作，使用 **Blazor WebAssembly (.NET 8)** 開發，支援衛福部 SMART on FHIR 測試環境，並整合 AI 臨床摘要功能。
+這是一個基於 **Blazor WebAssembly (.NET 8)** 開發的 SMART on FHIR 應用程式，專為展示病患眼底鏡 AI 判讀結果與整合臨床資訊而設計。本專案支援 **衛福部 SMART on FHIR 測試環境**，並符合 TW Core IG 規範。
 
-## 🚀 快速開始
+## 📊 系統架構與 FHIR 資源整合 (Architecture & Resources)
 
-### 先決條件
+本應用程式透過標準 FHIR API 存取醫療資料，並整合後端 AI 服務進行臨床分析。
 
-- **.NET 8.0 SDK** (LTS 版本)
-- FHIR R4 相容的 FHIR Server (或使用公開 Sandbox)
+### 1. 核心功能與 FHIR 資源對照 (Functionality vs. Resources)
 
-### 步驟 0: 資料準備 (Data Preparation)
+下圖展示了應用程式各個功能模組所使用的具體 FHIR Resource：
 
-本專案提供了一鍵式腳本，用於將測試病患、機構、生命徵象與眼底鏡影像資料匯入至 FHIR Server。
+```mermaid
+classDiagram
+    class PatientDashboard {
+        +基本資料顯示
+        +跨機構連結
+    }
+    class ClinicalData {
+        +生命徵象
+        +診斷記錄
+        +用藥清單
+    }
+    class AIAnalysis {
+        +眼底鏡判讀
+        +AI 臨床摘要
+    }
+    class Security {
+        +存取稽核
+        +身分驗證
+    }
 
-1. **進入資料目錄**：
-   ```powershell
-   cd fhir-test-data
-   ```
+    PatientDashboard ..> Patient : "讀取 (Read)"
+    PatientDashboard ..> Organization : "讀取 (Read)"
+    
+    ClinicalData ..> Observation : "讀取 (Signs)"
+    ClinicalData ..> Condition : "讀取 (Diagnosis)"
+    ClinicalData ..> MedicationRequest : "讀取 (Meds)"
+    
+    AIAnalysis ..> DiagnosticReport : "讀取 (Code 92134-4)"
+    AIAnalysis ..> Media : "讀取 (Image)"
+    
+    Security ..> AuditEvent : "寫入 (Create)"
+    
+    class Patient {
+        +Name
+        +Gender
+        +BirthDate
+        +ManagingOrganization
+    }
+    class DiagnosticReport {
+        +Code (LOINC 92134-4)
+        +Conclusion (AI Result)
+        +Media (Link)
+    }
+```
 
-2. **執行匯入腳本**：
-   ```powershell
-   .\import-data.ps1
-   ```
-   > 此腳本會自動建立「臺灣大學醫學院附設醫院」、5 位測試病患，以及相關的生命徵象與眼底鏡檢查報告。
+### 2. 資料流架構 (Architecture Overview)
 
-### 📋 測試資料概覽 (Test Data Overview)
+```mermaid
+graph TD
+    subgraph "Frontend Layer (Blazor WASM)"
+        UI["使用者介面 (UI)"]
+        Auth["SMART Auth Service"]
+        FhirClient["FHIR Client Service"]
+        AiService["AI Summary Service"]
+    end
 
-以下為匯入的 5 筆測試病患資料及其眼底鏡檢查狀態：
+    subgraph "External Services"
+        FHIR[("FHIR Server")]
+        AuthServer["OAuth2 Server"]
+        LLM["LLM Service (AI)"]
+    end
 
-| ID | 姓名 | 性別 | 年齡 | 眼底鏡檢查結果 | AI 建議 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **patient-001** | 王小明 | 男 | 40 | 糖尿病視網膜病變 (DR) | ⚠️ 建議轉診 |
-| **patient-002** | 李美華 | 女 | 35 | 正常 | ✅ 無需轉診 |
-| **patient-003** | 陳建國 | 男 | 47 | 嚴重糖尿病視網膜病變 | 🚨 **緊急轉診** |
-| **patient-004** | 林淑芬 | 女 | 30 | 輕微白內障 | 📅 追蹤觀察 |
-| **patient-005** | 張志偉 | 男 | 43 | 正常 | ✅ 無需轉診 |
+    UI --> Auth
+    UI --> FhirClient
+    UI --> AiService
+    
+    Auth --"Redirect/Token"--> AuthServer
+    FhirClient --"REST API"--> FHIR
+    AiService --"Prompt"--> LLM
+```
 
 ---
 
-### 步驟 1: 啟動應用程式
+## 🚀 主要功能詳解
 
+### 1. 病患儀表板 (Patient Dashboard)
+- **FHIR Resource**: `Patient`, `Organization`
+- **功能**: 
+  - 顯示病患基本資料（姓名、性別、年齡、病歷號）。
+  - **跨機構醫院選擇**：透過 `Organization` resource 支援切換不同就醫機構。
+  - **RWD 設計**：支援手機與桌面版面自動切換。
+
+### 2. AI 眼底鏡檢查 (AI Fundus Analysis)
+- **FHIR Resource**: `DiagnosticReport`, `Media`
+- **關鍵代碼**: LOINC `92134-4` (Fundus Photography)
+- **功能**:
+  - 自動篩選眼底鏡檢查報告。
+  - 透過 `Media` resource 載入高解析度眼底影像。
+  - 顯示 AI 判讀結論（如：DR 糖尿病視網膜病變嚴重程度）。
+  - **互動式檢視**：支援點擊放大預覽影像。
+
+### 3. 臨床數據整合 (Clinical Data)
+- **FHIR Resource**:
+  - `Observation`: 生命徵象數據（如體溫、血壓）。
+  - `Condition`: 過去與現在的診斷記錄。
+  - `MedicationRequest`: 門診/住院用藥清單。
+- **功能**: 將散落的臨床數據彙整為表格，方便醫師快速瀏覽。
+
+### 4. 智慧摘要 (AI Summary)
+- **技術**: Semantic Kernel / LLM
+- **功能**: 
+  - 一鍵生成「分析摘要」。
+  - 自動統整上述所有 FHIR 數據，生成約 100-300 字的專業摘要，輔助決策。
+
+### 5. 安全與稽核 (Security & Audit)
+- **FHIR Resource**: `AuditEvent`
+- **功能**:
+  - **IP 追蹤**：自動記錄客戶端 IP 位址。
+  - **Action Logging**：每次讀取病患資料時，自動向 FHIR Server 寫入一筆 `AuditEvent`，確保符合資安規範。
+
+---
+
+## 🛠️ 啟動與測試 (Getting Started)
+
+### 前置需求
+- .NET 8.0 SDK
+
+### 1. 資料準備 (Optional)
+若您使用的是空的 FHIR Server，請先執行匯入腳本：
+```powershell
+cd fhir-test-data
+.\import-data.ps1
+```
+
+### 2. 啟動應用程式
 ```bash
 cd SmartOnFhirApp
 dotnet run
 ```
-應用程式將會在 `https://localhost:5001` (或 `http://localhost:5000`) 啟動。
+瀏覽器開啟：`https://localhost:5001`
 
-## 📊 流程圖示 (Process Flows)
-
-### 1. SMART Launch 流程概覽
-
-```mermaid
-graph LR
-    A[訪問 /launch] --> B[取得 SMART Configuration]
-    B --> C[自動跳轉至授權服務]
-    C --> D[使用者登入授權]
-    D --> E[取得 Access Token]
-    E --> F[載入病患資料]
-    F --> G[顯示 AI 摘要報告]
-```
-
-### 2. SMART EHR Launch 啟動序 (Technical Flow)
+### 3. SMART Launch 流程
 
 ```mermaid
 sequenceDiagram
     participant User
-    participant EHR as EHR 系統 / Launcher
     participant App as SmartOnFhir App
     participant Auth as Auth Server
     participant FHIR as FHIR Server
 
-    User->>EHR: 選擇病患並啟動 App
-    EHR->>App: 請求 /launch?iss=...&launch=...
-    App->>FHIR: 查詢 .well-known/smart-configuration
-    FHIR-->>App: 返回 Auth Endpoints
-    App->>Auth: 重導向至 authorize endpoint
-    User->>Auth: 登入並授權
-    Auth-->>App: 重導向回 /redirect?code=...
-    App->>Auth: 交換 Token (POST /token)
-    Auth-->>App: 返回 Access Token & Patient ID
-    App->>FHIR: 查詢病患資料 (GET /Patient/{id})
-    FHIR-->>App: 返回病患資源
-    App->>User: 顯示病患Dashboard
+    User->>App: 訪問 /launch
+    App->>FHIR: 1. Discovery (metadata)
+    FHIR-->>App: Conformance Statement
+    App->>Auth: 2. Authorize Request
+    User->>Auth: 3. Login & Approve
+    Auth-->>App: 4. Auth Code
+    App->>Auth: 5. Token Request
+    Auth-->>App: 6. Access Token
+    App->>FHIR: 7. Get Patient Data (with Token)
+    FHIR-->>App: Patient Resource
+    App->>User: 顯示完整資訊
 ```
-
-### 步驟 2: 啟動 SMART Launch
-
-1. 瀏覽器開啟：`https://localhost:5001/launch`
-2. 系統會**自動跳轉**到衛福部測試環境的登入頁面 (`thas.mohw.gov.tw/provider-login`)
-3. 使用測試帳號登入並選擇病患進行授權
-4. 完成授權後，網頁將顯示病患的詳細資料與 AI 摘要報告
-
-> [!TIP]
-> 測試環境帳號請參考 [衛福部測試環境使用說明](docs/衛福部測試環境使用說明.md)
-
-### 💡 操作說明 (User Guide)
-
-#### 1. 醫院篩選與病患搜尋
-- 在病患選擇頁面，使用左上角的 **下拉選單** 選擇醫院（預設顯示「臺灣大學醫學院附設醫院」）。
-- 輸入病患姓名或 ID 進行搜尋。
-
-#### 2. 檢視眼底鏡報告
-- 在病患儀表板中，找到 **"👁️ AI眼底鏡檢查結果"** 卡片。
-- 卡片顯示 AI 判讀結果（如：建議轉診、無需轉診）與執行機構。
-- **點擊眼底影像** 可開啟放大檢視模式，再次點擊即可關閉。
-
-#### 3. 智慧摘要
-- 點擊 **"✨ 產生摘要"** 按鈕。
-- 系統將整合病患的診斷、用藥、檢驗與檢查報告，生成一份完整的病歷摘要。
 
 ---
 
-## 🌐 部署指南
+## 🌐 部署指南 (Deployment)
 
-本專案為 **Blazor WebAssembly** 應用程式，可部署為純靜態網站：
+本專案可部署為純靜態網站 (Static Web App)。
 
-1. **發布**：
+1. **發布**:
    ```bash
-   dotnet publish -c Release
+   dotnet publish -c Release -o output
    ```
-2. **部署**：將 `/bin/Release/net8.0/wwwroot` 資料夾部署至 GitHub Pages、Azure Static Web Apps 或任何靜態網站主機。
-
-> [!NOTE]
-> 本專案使用 GitHub Actions 自動部署到 GitHub Pages，請參考 `.github/workflows/deploy.yml`。
+2. **部署**: 將 `output/wwwroot` 目錄內容上傳至 GitHub Pages 或任何靜態主機。
 
 ---
 
-## 📚 相關文件 (docs/)
+## 📚 文件資源
+- **[測試環境使用說明](docs/衛福部測試環境使用說明.md)**
+- **[上架流程規範](docs/1014_SMART測試環境與上架流程_時賦.md)**
 
-本專案 `docs/` 資料夾中包含重要參考文件：
-
-- 📖 **[1014_SMART測試環境與上架流程_時賦.md](docs/1014_SMART測試環境與上架流程_時賦.md)**  
-  詳細的 SMART on FHIR 上架規範與測試環境參數說明。
-
-- 📖 **[衛福部測試環境使用說明.md](docs/衛福部測試環境使用說明.md)**  
-  針對衛福部 Sandbox 的具體操作指南。
-
-- 📖 **[衛生福利部資訊處三大類型智慧醫療中心技術手冊_v20250512.md](docs/衛生福利部資訊處三大類型智慧醫療中心技術手冊_v20250512.md)**  
-  官方技術手冊與規範。
-
----
-
-## 🏗️ 專案結構
-
-```
-SmartOnFhir/
-├── SmartOnFhirApp/           # 主要應用程式 (Blazor WebAssembly)
-│   ├── Pages/                # Razor 頁面 (Index.razor, Launch.razor, Redirect.razor)
-│   ├── Services/             # FHIR 服務、AI 摘要服務、AuditEvent 記錄
-│   ├── Models/               # FHIR 資料模型 (Patient, Observation, AuditEvent 等)
-│   ├── wwwroot/              # 靜態檔案 (css, appsettings.json)
-│   └── SmartOnFhirApp.csproj # 專案檔 (.NET 8)
-├── docs/                     # 說明文件與規範
-├── fhir-test-data/           # 測試資料 JSON 與匯入腳本 (詳見 fhir-test-data/README.md)
-└── README.md                 # 本文件
-```
-
----
-
-## 🔧 常見問題與疑難排解
-
-
-### Q: 發生 HTTPS 憑證錯誤？
-**A:** 本地開發環境 (localhost) 的憑證通常未經簽署，請在瀏覽器中選擇「繼續前往」或「接受風險」即可。
-
----
-
-**授權**: MIT License  
-**版本**: 1.0 (Blazor WebAssembly - .NET 8 LTS with AI Integration)
+**License**: MIT  
+**Version**: 1.0.2501
