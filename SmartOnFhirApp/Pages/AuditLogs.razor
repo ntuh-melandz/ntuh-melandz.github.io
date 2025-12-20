@@ -72,13 +72,8 @@
                                         <td>
                                             @{
                                                 var patientRef = evt.Entity?.FirstOrDefault()?.What?.ReferenceValue ?? "-";
-                                                var patientName = evt.Entity?.FirstOrDefault()?.Name ?? "";
                                             }
                                             @patientRef
-                                            @if (!string.IsNullOrEmpty(patientName))
-                                            {
-                                                <br/><small class="text-muted">(@patientName)</small>
-                                            }
                                         </td>
                                     </tr>
                                 }
