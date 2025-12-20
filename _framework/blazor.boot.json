@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "SmartOnFhirApp",
   "resources": {
-    "hash": "sha256-OclVGTNyOWnr5zaox3PgQNQvd5gWsEqLTUOZp37/fCU=",
+    "hash": "sha256-NLSJlEu4B9R7co7EtGzQOtRj7XDdwAkUaGwgK+7YjoU=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-vtotCeXt2UD6oc459laJT32vBgigZ+eLoUmdeFkvYDk="
     },
@@ -122,7 +122,7 @@
       "System.wasm": "sha256-I4hhyMuUoHdrzDopL9tlnkL/Skg+0OO+gmkOXNT3dcg=",
       "netstandard.wasm": "sha256-pOAdCGwXz1Vp2gsxPttqfyWXo7x4AdNY+DuknJSAYr0=",
       "System.Private.CoreLib.wasm": "sha256-7Nv47UM2Xo4PSmNt0SmelwTNXaMveZ6729I+XmVf2D4=",
-      "SmartOnFhirApp.wasm": "sha256-cQURDlbpISH+UsbSUN9obqXTs+UVJX1V20sRPUo0Xmw="
+      "SmartOnFhirApp.wasm": "sha256-IisnyxmyH8x//BL805dBBrwMZeeaW75xakIDX6qXM1s="
     }
   },
   "cacheBootResources": true,
