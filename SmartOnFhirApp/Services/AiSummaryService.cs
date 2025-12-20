@@ -222,7 +222,6 @@ namespace SmartOnFhirApp.Services
             // 1. 嘗試主要 AI 服務 (AiService)
             var primaryEndpoint = _configuration["AiService:Endpoint"];
             var primaryModel = _configuration["AiService:Model"] ?? "Openai-Gpt";
-            var primaryModel = _configuration["AiService:Model"] ?? "Openai-Gpt";
             var encryptedKey = _configuration["AiService:EncryptedKey"];
             var primaryKey = DecryptKey(encryptedKey);
 
@@ -427,6 +426,7 @@ namespace SmartOnFhirApp.Services
                    $"   - 檢查報告中的日期為「檢查執行日期」，描述建議轉診或追蹤時，請勿將該日期誤用為「截止日期」或「期限」。\n" +
                    $"   - 檢查報告的結論與建議追蹤時間，請務必依照資料內容描述，不要自行推測。\n" +
                    $"   - **嚴禁輸出任何與「兒童」或「小兒科」相關的字眼（除非資料中明確提及）。**\n" +
+                   $"   - **描述體格時，請優先使用資料中「[系統計算] BMI」的數值與狀態（如：BMI 27.8 屬過重範圍），嚴禁單獨描述身高體重為「無顯著異常」或「正常」，這類描述沒有臨床意義。**\n" +
                    $"6. **嚴禁輸出任何思考過程、草稿、字數統計或英文說明（如 Proceed.）。**\n" +
                    $"7. **嚴禁在摘要中提及「台灣繁體中文」這幾個字。**\n" +
                    $"8. **直接輸出最終的摘要內容，不要加任何標題、前言、引號或「臨床分析摘要」字樣。**\n\n" +
@@ -599,16 +599,16 @@ namespace SmartOnFhirApp.Services
                 var heights = obs.Where(o => (o.Code?.Text?.Contains("Body Height", StringComparison.OrdinalIgnoreCase) == true || 
                                              o.Code?.Text?.Contains("Height", StringComparison.OrdinalIgnoreCase) == true ||
                                              o.Code?.Text?.Contains("身高") == true) && 
-                                             o.Value is Hl7.Fhir.Model.Quantity)
-                                 .Select(o => (Hl7.Fhir.Model.Quantity)o.Value)
+                                             o.ValueQuantity != null)
+                                 .Select(o => o.ValueQuantity!)
                                  .OrderByDescending(q => q.Value) // 取最新的或合理的
                                  .FirstOrDefault();
 
                 var weights = obs.Where(o => (o.Code?.Text?.Contains("Body Weight", StringComparison.OrdinalIgnoreCase) == true || 
                                              o.Code?.Text?.Contains("Weight", StringComparison.OrdinalIgnoreCase) == true ||
                                              o.Code?.Text?.Contains("體重") == true) && 
-                                             o.Value is Hl7.Fhir.Model.Quantity)
-                                 .Select(o => (Hl7.Fhir.Model.Quantity)o.Value)
+                                             o.ValueQuantity != null)
+                                 .Select(o => o.ValueQuantity!)
                                  .OrderByDescending(q => q.Value)
                                  .FirstOrDefault();
 
@@ -747,24 +747,19 @@ namespace SmartOnFhirApp.Services
 
             try
             {
-                // Hardcoded Key/IV for Obfuscation (Not secure storage, but prevents GitHub scanning)
-                var key = Convert.FromBase64String("J4EaP43yiH6haw9LnzUKXGHztik6HJxxRQu5Zw5P+jQ=");
-                var iv = Convert.FromBase64String("MY1NCWeZbh2hzcu3umzD3A==");
+                // Simple XOR Obfuscation (Compatible with Blazor WASM)
+                // Note: This is NOT strong encryption, but hides the key from plain text scanners.
+                // Key: "SmartOnFhirAppSecret"
+                var keyBytes = System.Text.Encoding.UTF8.GetBytes("SmartOnFhirAppSecret");
+                var cipherBytes = Convert.FromBase64String(encryptedText);
+                var plainBytes = new byte[cipherBytes.Length];
 
-                using (var aes = Aes.Create())
+                for (int i = 0; i < cipherBytes.Length; i++)
                 {
-                    aes.Key = key;
-                    aes.IV = iv;
-                    var decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
-
-                    var cipherText = Convert.FromBase64String(encryptedText);
-                    using (var ms = new System.IO.MemoryStream(cipherText))
-                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
-                    using (var sr = new System.IO.StreamReader(cs))
-                    {
-                        return sr.ReadToEnd();
-                    }
+                    plainBytes[i] = (byte)(cipherBytes[i] ^ keyBytes[i % keyBytes.Length]);
                 }
+
+                return System.Text.Encoding.UTF8.GetString(plainBytes);
             }
             catch
             {

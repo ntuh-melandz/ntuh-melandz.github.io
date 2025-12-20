@@ -470,3 +470,68 @@ public class DiagnosticReportMedia
     [JsonPropertyName("link")]
     public Reference? Link { get; set; }
 }
+
+// FHIR AuditEvent Resource (for logging access)
+public class AuditEvent
+{
+    [JsonPropertyName("resourceType")]
+    public string ResourceType { get; set; } = "AuditEvent";
+
+    [JsonPropertyName("type")]
+    public Coding Type { get; set; } = new() { System = "http://dicom.nema.org/resources/ontology/DCM", Code = "110110", Display = "Patient Record" };
+
+    [JsonPropertyName("subtype")]
+    public List<Coding>? Subtype { get; set; }
+
+    [JsonPropertyName("action")]
+    public string Action { get; set; } = "R"; // R = Read
+
+    [JsonPropertyName("recorded")]
+    public string Recorded { get; set; } = DateTime.UtcNow.ToString("o");
+
+    [JsonPropertyName("outcome")]
+    public string Outcome { get; set; } = "0"; // 0 = Success
+
+    [JsonPropertyName("agent")]
+    public List<AuditEventAgent> Agent { get; set; } = new();
+
+    [JsonPropertyName("source")]
+    public AuditEventSource Source { get; set; } = new();
+
+    [JsonPropertyName("entity")]
+    public List<AuditEventEntity>? Entity { get; set; }
+}
+
+public class AuditEventAgent
+{
+    [JsonPropertyName("who")]
+    public Reference? Who { get; set; }
+
+    [JsonPropertyName("requestor")]
+    public bool Requestor { get; set; } = true;
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+}
+
+public class AuditEventSource
+{
+    [JsonPropertyName("observer")]
+    public Reference Observer { get; set; } = new();
+
+    [JsonPropertyName("site")]
+    public string? Site { get; set; }
+}
+
+public class AuditEventEntity
+{
+    [JsonPropertyName("what")]
+    public Reference? What { get; set; }
+
+    [JsonPropertyName("type")]
+    public Coding? Type { get; set; }
+
+    [JsonPropertyName("name")]
+    public string? Name { get; set; }
+}
+

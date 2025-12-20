@@ -1150,14 +1150,25 @@ else if (patient != null)
             if (report.Media?.FirstOrDefault()?.Link?.ReferenceValue != null)
             {
                 var mediaRef = report.Media.First().Link!.ReferenceValue;
-                var mediaId = mediaRef.Split('/').Last();
-                var media = await FhirService.GetMediaAsync(fhirBaseUrl!, mediaId);
-                if (media != null)
+                if (mediaRef != null)
                 {
-                    fundusMediaCache[report.Id] = media;
+                    var mediaId = mediaRef.Split('/').Last();
+                    var media = await FhirService.GetMediaAsync(fhirBaseUrl!, mediaId);
+                    if (media != null)
+                    {
+                        fundusMediaCache[report.Id] = media;
+                    }
                 }
             }
         }
+
+        // 嘗試記錄存取事件到 FHIR Server (AuditEvent)
+        _ = Task.Run(async () =>
+        {
+            var patientName = FhirService.GetDisplayName(patient?.Name?.FirstOrDefault());
+            var result = await FhirService.PostAuditEventAsync(fhirBaseUrl!, patientId!, patientName);
+            Console.WriteLine($"[AuditEvent] Posted: Success={result.Success}, Status={result.StatusCode}");
+        });
 
         // 自動觸發智慧摘要
         _ = GenerateSummary();

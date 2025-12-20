@@ -602,4 +602,78 @@ public class FhirClientService
 
         return null;
     }
+
+    /// <summary>
+    /// Posts an AuditEvent to the FHIR server to log patient access.
+    /// Returns (success, statusCode, errorMessage)
+    /// </summary>
+    public async Task<(bool Success, int StatusCode, string? Error)> PostAuditEventAsync(
+        string fhirBaseUrl, 
+        string patientId, 
+        string? patientName = null,
+        string appName = "SmartOnFhirApp")
+    {
+        try
+        {
+            var client = await GetAuthenticatedHttpClientAsync();
+            var url = $"{fhirBaseUrl}/AuditEvent";
+
+            var auditEvent = new AuditEvent
+            {
+                Recorded = DateTime.UtcNow.ToString("o"),
+                Agent = new List<AuditEventAgent>
+                {
+                    new AuditEventAgent
+                    {
+                        Name = appName,
+                        Requestor = true
+                    }
+                },
+                Source = new AuditEventSource
+                {
+                    Site = fhirBaseUrl,
+                    Observer = new Reference { Display = appName }
+                },
+                Entity = new List<AuditEventEntity>
+                {
+                    new AuditEventEntity
+                    {
+                        What = new Reference 
+                        { 
+                            ReferenceValue = $"Patient/{patientId}",
+                            Display = patientName
+                        },
+                        Type = new Coding 
+                        { 
+                            System = "http://terminology.hl7.org/CodeSystem/audit-entity-type",
+                            Code = "1", 
+                            Display = "Person" 
+                        },
+                        Name = patientName ?? patientId
+                    }
+                }
+            };
+
+            Console.WriteLine($"[AuditEvent] Posting to {url}...");
+            var response = await client.PostAsJsonAsync(url, auditEvent);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"[AuditEvent] ✅ Success! Status: {(int)response.StatusCode}");
+                return (true, (int)response.StatusCode, null);
+            }
+            else
+            {
+                Console.WriteLine($"[AuditEvent] ❌ Failed! Status: {(int)response.StatusCode}, Body: {responseBody}");
+                return (false, (int)response.StatusCode, responseBody);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AuditEvent] ❌ Exception: {ex.Message}");
+            return (false, 0, ex.Message);
+        }
+    }
 }
+
