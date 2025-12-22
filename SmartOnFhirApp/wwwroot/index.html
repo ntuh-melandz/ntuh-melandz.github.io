@@ -40,11 +40,13 @@
     <script>
         // Helper function to get client IP for AuditEvent logging
         async function getClientIp() {
+            console.log('[IP] Starting IP detection...');
+            
             // Try multiple IP services with different CORS policies
             const services = [
-                { url: 'https://jsonip.com', parser: async (r) => (await r.json()).ip },
                 { url: 'https://api64.ipify.org?format=json', parser: async (r) => (await r.json()).ip },
                 { url: 'https://api.ipify.org?format=json', parser: async (r) => (await r.json()).ip },
+                { url: 'https://jsonip.com', parser: async (r) => (await r.json()).ip },
                 {
                     url: 'https://www.cloudflare.com/cdn-cgi/trace', parser: async (r) => {
                         const text = await r.text();
@@ -56,7 +58,16 @@
 
             for (const svc of services) {
                 try {
-                    const response = await fetch(svc.url, { mode: 'cors', signal: AbortSignal.timeout(3000) });
+                    // Use a manual timeout for better compatibility
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                    
+                    const response = await fetch(svc.url, { 
+                        mode: 'cors', 
+                        signal: controller.signal 
+                    });
+                    clearTimeout(timeoutId);
+
                     if (response.ok) {
                         const ip = await svc.parser(response);
                         if (ip) {
@@ -65,35 +76,57 @@
                         }
                     }
                 } catch (e) {
-                    console.warn('[IP] Failed:', svc.url, e.message);
+                    console.warn('[IP] Failed:', svc.url, e.name === 'AbortError' ? 'Timeout' : e.message);
                 }
             }
 
             console.warn('[IP] All external services failed, trying local detection...');
             
-            // Fallback: Try to get local IP via WebRTC (may be blocked by browser)
+            // Fallback: Try to get local IP via WebRTC
             try {
                 const localIp = await new Promise((resolve) => {
+                    const RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+                    if (!RTCPeerConnection) {
+                        resolve(null);
+                        return;
+                    }
+                    
                     const pc = new RTCPeerConnection({ iceServers: [] });
                     pc.createDataChannel('');
-                    pc.createOffer().then(pc.setLocalDescription.bind(pc));
+                    pc.createOffer().then(offer => pc.setLocalDescription(offer)).catch(() => resolve(null));
+                    
                     pc.onicecandidate = (ice) => {
                         if (!ice || !ice.candidate || !ice.candidate.candidate) {
-                            resolve(null);
+                            // No more candidates
                             return;
                         }
                         const parts = ice.candidate.candidate.split(' ');
                         const ip = parts[4];
-                        if (ip && ip.includes('.')) resolve(ip);
+                        if (ip && (ip.includes('.') || ip.includes(':'))) {
+                            pc.onicecandidate = null;
+                            pc.close();
+                            resolve(ip);
+                        }
                     };
-                    setTimeout(() => resolve(null), 1000);
+                    
+                    // Timeout for WebRTC
+                    setTimeout(() => {
+                        pc.onicecandidate = null;
+                        pc.close();
+                        resolve(null);
+                    }, 1500);
                 });
-                if (localIp) return localIp + " (Local)";
+                
+                if (localIp) {
+                    console.log('[IP] Got local IP via WebRTC:', localIp);
+                    return localIp + " (Local)";
+                }
             } catch (e) {
-                console.warn('[IP] WebRTC fallback failed');
+                console.warn('[IP] WebRTC fallback failed:', e.message);
             }
 
-            return "127.0.0.1 (Unknown)";
+            console.log('[IP] Returning default fallback');
+            return "127.0.0.1 (Fallback)";
         }
     </script>
     <script src="_framework/blazor.webassembly.js"></script>

@@ -1306,8 +1306,12 @@ else if (patient != null)
         try
         {
             clientIp = await JS.InvokeAsync<string>("getClientIp");
+            Console.WriteLine($"[IP] JS returned: {clientIp ?? "null"}");
         }
-        catch { /* Ignore IP fetch errors */ }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[IP] JS Invoke Error: {ex.Message}");
+        }
 
         _ = Task.Run(async () =>
         {
