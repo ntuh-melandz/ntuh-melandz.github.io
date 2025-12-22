@@ -56,7 +56,7 @@
 
             for (const svc of services) {
                 try {
-                    const response = await fetch(svc.url, { mode: 'cors' });
+                    const response = await fetch(svc.url, { mode: 'cors', signal: AbortSignal.timeout(3000) });
                     if (response.ok) {
                         const ip = await svc.parser(response);
                         if (ip) {
@@ -68,8 +68,32 @@
                     console.warn('[IP] Failed:', svc.url, e.message);
                 }
             }
-            console.warn('[IP] All services failed');
-            return null;
+
+            console.warn('[IP] All external services failed, trying local detection...');
+            
+            // Fallback: Try to get local IP via WebRTC (may be blocked by browser)
+            try {
+                const localIp = await new Promise((resolve) => {
+                    const pc = new RTCPeerConnection({ iceServers: [] });
+                    pc.createDataChannel('');
+                    pc.createOffer().then(pc.setLocalDescription.bind(pc));
+                    pc.onicecandidate = (ice) => {
+                        if (!ice || !ice.candidate || !ice.candidate.candidate) {
+                            resolve(null);
+                            return;
+                        }
+                        const parts = ice.candidate.candidate.split(' ');
+                        const ip = parts[4];
+                        if (ip && ip.includes('.')) resolve(ip);
+                    };
+                    setTimeout(() => resolve(null), 1000);
+                });
+                if (localIp) return localIp + " (Local)";
+            } catch (e) {
+                console.warn('[IP] WebRTC fallback failed');
+            }
+
+            return "127.0.0.1 (Unknown)";
         }
     </script>
     <script src="_framework/blazor.webassembly.js"></script>
