@@ -362,7 +362,7 @@ body {
         padding: 0.5rem;
     }
 
-    /* Fundus image styles */
+    /* AI Image result styles */
     .fundus-content {
         flex-direction: column;
     }
@@ -580,7 +580,7 @@ body {
     }
 }
 
-/* ===== Fundus Image Result Styles ===== */
+/* ===== AI Image Analysis Result Styles ===== */
 .fundus-result-card {
     background: white;
     border: 1px solid #e2e8f0;
