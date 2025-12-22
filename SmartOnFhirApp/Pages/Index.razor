@@ -590,23 +590,23 @@ else if (patient != null)
         </div>
     </div>
 
-    <!-- 眼底鏡檢查結果 -->
-    @if (fundusReports?.Any() == true)
+    <!-- AI影像檢查結果 -->
+    @if (imageReports?.Any() == true)
     {
         <div class="card">
             <div class="card-header">
-                <h2>👁️ AI眼底鏡檢查結果</h2>
+                <h2>🖼️ AI影像檢查結果</h2>
             </div>
             <div class="card-body">
-                @foreach (var report in fundusReports)
+                @foreach (DiagnosticReport report in imageReports)
                 {
                     <div class="fundus-result-card @GetReferralClass(report.Conclusion)">
                         <div class="fundus-content">
                             <div class="fundus-image-container">
-                                @if (fundusMediaCache.TryGetValue(report.Id, out var media) && media?.Content?.Data != null)
+                                @if (imageMediaCache.TryGetValue(report.Id, out var media) && media?.Content?.Data != null)
                                 {
                                     <img src="data:@(media.Content.ContentType ?? "image/png");base64,@media.Content.Data" 
-                                         alt="眼底影像" class="fundus-image" 
+                                         alt="影像" class="fundus-image" 
                                          style="width: 180px; height: 180px; object-fit: cover; cursor: pointer;"
                                          @onclick='() => ShowImage($"data:{(media.Content.ContentType ?? "image/png")};base64,{media.Content.Data}")' />
                                 }
@@ -630,6 +630,13 @@ else if (patient != null)
                                     <span class="fundus-date">@FormatDateTime(report.EffectiveDateTime)</span>
                                 </div>
                                 <div class="fundus-details">
+                                    <p class="loinc-code">
+                                        <strong>項目：</strong>@FhirService.GetCodeDisplay(report.Code)
+                                        @if (report.Code?.Coding?.FirstOrDefault()?.Code != null)
+                                        {
+                                            <span class="badge badge-light text-dark ms-1">LOINC: @report.Code.Coding.First().Code</span>
+                                        }
+                                    </p>
                                     @if (report.ConclusionCode?.FirstOrDefault()?.Text != null)
                                     {
                                         <p class="conclusion-text">@report.ConclusionCode.First().Text</p>
@@ -895,8 +902,8 @@ else if (patient != null)
     private List<Observation>? observations;
     private List<Condition>? conditions;
     private List<MedicationRequest>? medications;
-    private List<DiagnosticReport>? fundusReports;
-    private Dictionary<string, Media> fundusMediaCache = new();
+    private List<DiagnosticReport>? imageReports;
+    private Dictionary<string, Media> imageMediaCache = new();
 
     private string? fhirBaseUrl;
     private string? patientId;
@@ -1212,8 +1219,8 @@ else if (patient != null)
         observations = null;
         conditions = null;
         medications = null;
-        fundusReports = null;
-        fundusMediaCache.Clear();
+        imageReports = null;
+        imageMediaCache.Clear();
         aiSummaryResult = null; // 清除 AI 總結
         showPatientSelection = true;
         
@@ -1262,18 +1269,21 @@ else if (patient != null)
         var observationsTask = FhirService.GetObservationsAsync(fhirBaseUrl!, patientId!);
         var conditionsTask = FhirService.GetConditionsAsync(fhirBaseUrl!, patientId!);
         var medicationsTask = FhirService.GetMedicationRequestsAsync(fhirBaseUrl!, patientId!);
-        var fundusReportsTask = FhirService.GetDiagnosticReportsAsync(fhirBaseUrl!, patientId!, "92134-4");
+        var imageReportsTask = FhirService.GetDiagnosticReportsAsync(fhirBaseUrl!, patientId!); // 不再侷限於 92134-4
 
-        await Task.WhenAll(observationsTask, conditionsTask, medicationsTask, fundusReportsTask);
+        await Task.WhenAll(observationsTask, conditionsTask, medicationsTask, imageReportsTask);
 
         observations = await observationsTask ?? new List<Observation>();
         conditions = await conditionsTask ?? new List<Condition>();
         medications = await medicationsTask ?? new List<MedicationRequest>();
-        fundusReports = await fundusReportsTask ?? new List<DiagnosticReport>();
+        var allReports = await imageReportsTask ?? new List<DiagnosticReport>();
         
-        // 載入眼底影像
-        fundusMediaCache.Clear();
-        foreach (var report in fundusReports)
+        // 篩選含有影像的報告 (視為 AI 影像分析)
+        imageReports = allReports.Where(r => r.Media?.Any() == true).ToList();
+        
+        // 載入影像
+        imageMediaCache.Clear();
+        foreach (var report in imageReports)
         {
             if (report.Media?.FirstOrDefault()?.Link?.ReferenceValue != null)
             {
@@ -1284,7 +1294,7 @@ else if (patient != null)
                     var media = await FhirService.GetMediaAsync(fhirBaseUrl!, mediaId);
                     if (media != null)
                     {
-                        fundusMediaCache[report.Id] = media;
+                        imageMediaCache[report.Id] = media;
                     }
                 }
             }
@@ -1484,7 +1494,7 @@ else if (patient != null)
                 conditions ?? new List<Condition>(), 
                 medications ?? new List<MedicationRequest>(), 
                 observations ?? new List<Observation>(),
-                fundusReports ?? new List<DiagnosticReport>()
+                imageReports ?? new List<DiagnosticReport>()
             );
         }
         catch (Exception ex)
@@ -1547,7 +1557,7 @@ else if (patient != null)
         return sanitizer.Sanitize(html);
     }
 
-    // Fundus/Referral helper methods
+    // AI Image Analysis/Referral helper methods
     private string GetReferralClass(string? conclusion)
     {
         return conclusion switch

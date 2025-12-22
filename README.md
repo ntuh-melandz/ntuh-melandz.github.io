@@ -1,6 +1,6 @@
 # 臺大醫院 AI 影像判讀結果整合平台 (SMART on FHIR)
 
-這是一個基於 **Blazor WebAssembly (.NET 8)** 開發的 SMART on FHIR 應用程式，專為展示病患眼底鏡 AI 判讀結果與整合臨床資訊而設計。本專案支援 **衛福部 SMART on FHIR 測試環境**，並符合 TW Core IG 規範。
+這是一個基於 **Blazor WebAssembly (.NET 8)** 開發的 SMART on FHIR 應用程式，專為展示病患 AI 影像判讀結果與整合臨床資訊而設計。本專案支援 **衛福部 SMART on FHIR 測試環境**，並符合 TW Core IG 規範。
 
 ## 📊 系統架構與 FHIR 資源整合 (Architecture & Resources)
 
@@ -22,7 +22,7 @@ classDiagram
         +用藥清單
     }
     class AIAnalysis {
-        +眼底鏡判讀
+        +影像判讀
         +AI 臨床摘要
     }
     class Security {
@@ -37,7 +37,7 @@ classDiagram
     ClinicalData ..> Condition : "讀取 (Diagnosis)"
     ClinicalData ..> MedicationRequest : "讀取 (Meds)"
     
-    AIAnalysis ..> DiagnosticReport : "讀取 (Code 92134-4)"
+    AIAnalysis ..> DiagnosticReport : "讀取 (AI 影像報告)"
     AIAnalysis ..> Media : "讀取 (Image)"
     
     Security ..> AuditEvent : "寫入 (Create)"
@@ -49,7 +49,7 @@ classDiagram
         +ManagingOrganization
     }
     class DiagnosticReport {
-        +Code (LOINC 92134-4)
+        +Code (LOINC)
         +Conclusion (AI Result)
         +Media (Link)
     }
@@ -92,12 +92,13 @@ graph TD
   - **跨機構醫院選擇**：透過 `Organization` resource 支援切換不同就醫機構。
   - **RWD 設計**：支援手機與桌面版面自動切換。
 
-### 2. AI 眼底鏡檢查 (AI Fundus Analysis)
+### 2. AI 影像檢查結果 (AI Image Analysis)
 - **FHIR Resource**: `DiagnosticReport`, `Media`
-- **關鍵代碼**: LOINC `92134-4` (Fundus Photography)
+- **關鍵代碼**: 支援多種 LOINC 影像代碼 (如：`92134-4` 眼底鏡)
 - **功能**:
-  - 自動篩選眼底鏡檢查報告。
-  - 透過 `Media` resource 載入高解析度眼底影像。
+  - 自動篩選 AI 影像檢查報告。
+  - 顯示檢查項目的 LOINC 代碼與名稱。
+  - 透過 `Media` resource 載入高解析度影像。
   - 顯示 AI 判讀結論（如：DR 糖尿病視網膜病變嚴重程度）。
   - **互動式檢視**：支援點擊放大預覽影像。
 

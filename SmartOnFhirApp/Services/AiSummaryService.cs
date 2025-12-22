@@ -134,7 +134,7 @@ namespace SmartOnFhirApp.Services
                     diagnosisSection.AppendLine("- 無診斷記錄");
                 }
 
-                // 2.5 整理檢查報告 (眼底鏡等)
+                // 2.5 整理檢查報告 (AI 影像等)
                 var reportSection = new StringBuilder();
                 if (reports != null && reports.Any())
                 {
@@ -278,7 +278,7 @@ namespace SmartOnFhirApp.Services
 
             // 3. 最後 Fallback 到預設 Localhost Ollama
             var defaultEndpoint = "http://localhost:11434/api/generate";
-            var defaultModel = "qwen3:0.6b"; // 預設模型
+            var defaultModel = "devstral-small-2"; // 預設模型
             
             try 
             {
