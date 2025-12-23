@@ -1,4 +1,4 @@
-# 臺大醫院 AI 影像判讀結果整合平台 (SMART on FHIR)
+# 臺大醫院 AI 影像判讀結果整合平台 (AI Image analyst Integration platform | Smart on FHIR @ NTUH)
 
 ### 🏥 專案緣起：打造無圍牆的智慧醫療共享平台
 
@@ -95,6 +95,22 @@ graph TD
 
 ---
 
+## � 系統介面展示 (System Screenshots)
+
+### 1. 病患選擇與搜尋
+透過標準 FHIR API 取得病患清單，支援跨機構篩選與關鍵字搜尋。
+![病患清單畫面說明](docs/index-2-病患畫面說明.png)
+
+### 2. 智慧摘要與臨床整合
+自動彙整病患的所有 FHIR 數據，並透過 AI 生成臨床分析摘要。
+![智慧摘要](docs/func-6-智慧摘要.jpg)
+
+### 3. AI 影像判讀結果
+整合眼底鏡等影像資料，顯示 AI 判讀結論與建議。
+![AI 影像判讀](docs/func-2-AI影像檢查結果.jpg)
+
+---
+
 ## 🚀 主要功能詳解
 
 ### 1. 病患儀表板 (Patient Dashboard)
@@ -111,7 +127,7 @@ graph TD
   - 自動篩選 AI 影像檢查報告。
   - 顯示檢查項目的 LOINC 代碼與名稱。
   - 透過 `Media` resource 載入高解析度影像。
-  - 顯示 AI 判讀結論（如：DR 糖尿病視網膜病變嚴重程度）。
+  - 顯示 AI 判讀結論（如：糖尿病視網膜病變嚴重程度）。
   - **互動式檢視**：支援點擊放大預覽影像。
 
 ### 3. 臨床數據整合 (Clinical Data)
@@ -120,18 +136,24 @@ graph TD
   - `Condition`: 過去與現在的診斷記錄。
   - `MedicationRequest`: 門診/住院用藥清單。
 - **功能**: 將散落的臨床數據彙整為表格，方便醫師快速瀏覽。
+![診斷記錄](docs/func-3-診斷紀錄.jpg)
+![用藥記錄](docs/func-4-用藥紀錄.jpg)
+![生命徵象](docs/func-5-生命徵象與檢驗.jpg)
 
 ### 4. 智慧摘要 (AI Summary)
-- **技術**: Semantic Kernel / LLM
+- **技術**: 大型語言模型 LLM
 - **功能**: 
   - 一鍵生成「分析摘要」。
   - 自動統整上述所有 FHIR 數據，生成約 100-300 字的專業摘要，輔助決策。
+  ![智慧摘要](docs/func-6-智慧摘要.jpg)
+
 
 ### 5. 安全與稽核 (Security & Audit)
 - **FHIR Resource**: `AuditEvent`
 - **功能**:
   - **IP 追蹤**：自動記錄客戶端 IP 位址。
   - **Action Logging**：每次讀取病患資料時，自動向 FHIR Server 寫入一筆 `AuditEvent`，確保符合資安規範。
+![存取記錄](docs/log-存取紀錄.jpg)
 
 ---
 
@@ -194,5 +216,5 @@ sequenceDiagram
 - **[測試環境使用說明](docs/衛福部測試環境使用說明.md)**
 - **[上架流程規範](docs/1014_SMART測試環境與上架流程_時賦.md)**
 
-**License**: MIT  
-**Version**: 1.0.2501
+**License**: 本專案授權需經由國立臺灣大學醫學院附設醫院（臺大醫院）同意方可使用。
+**Version**: 1.0
