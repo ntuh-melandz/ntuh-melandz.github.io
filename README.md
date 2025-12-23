@@ -1,6 +1,8 @@
 # 臺大醫院 AI 影像判讀結果整合平台 (SMART on FHIR)
 
-這是一個基於 **Blazor WebAssembly (.NET 8)** 開發的 SMART on FHIR 應用程式，專為展示病患 AI 影像判讀結果與整合臨床資訊而設計。本專案支援 **衛福部 SMART on FHIR 測試環境**，並符合 TW Core IG 規範。
+為了彌平大醫院跟小診所之間的醫療設備差距，本專案旨在透過 SMART on FHIR 機制，將大醫院的先進 AI 影像判讀資源分享給基層診所使用。
+
+這是一個基於 **Blazor WebAssembly (.NET 8)** 開發的應用程式，提供清晰的介面展示 AI 影像判讀結果並整合臨床資訊。本專案支援 **衛福部 SMART on FHIR 測試環境**，並符合 TW Core IG 規範。
 
 ## 📊 系統架構與 FHIR 資源整合 (Architecture & Resources)
 
