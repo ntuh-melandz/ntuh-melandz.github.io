@@ -32,6 +32,13 @@ public class FhirClientService
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/fhir+json"));
         }
 
+        // 移除可能導致 CORS 預檢失敗的自訂標頭
+        // 某些 FHIR Server 對於未預期的標頭會回傳 401 或 CORS 錯誤
+        if (_httpClient.DefaultRequestHeaders.Contains("X-Requested-With"))
+        {
+            _httpClient.DefaultRequestHeaders.Remove("X-Requested-With");
+        }
+
         return _httpClient;
     }
 
