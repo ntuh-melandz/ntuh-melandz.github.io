@@ -205,7 +205,8 @@ else if (showPatientSelection && availablePatients != null)
             else
             {
                 <div class="text-center py-3 text-muted">
-                    找不到符合的病患資料
+                    <p>找不到符合的病患資料</p>
+                    <small>目前連線至: @fhirBaseUrl</small>
                 </div>
             }
 
@@ -920,7 +921,7 @@ else if (patient != null)
     private bool showOrgSelector = false;
     private List<Organization>? availableOrgs;
     private string selectedOrgId = "";
-    private string selectedSearchOrgId = "org-ntuh"; // Default to NTUH
+    private string selectedSearchOrgId = ""; // Default to All Hospitals for better compatibility
     private string searchQuery = "";
 
     // AI Summary
