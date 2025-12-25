@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "SmartOnFhirApp",
   "resources": {
-    "hash": "sha256-mo7i1En0AknuwKFUBGuzh1/6joO/5jkpwIS+x6xhwek=",
+    "hash": "sha256-dsffkfStB7OcW41kpMDSYjVmzmXAIfZ8JFMAeuEvAqQ=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-vtotCeXt2UD6oc459laJT32vBgigZ+eLoUmdeFkvYDk="
     },
@@ -81,7 +81,7 @@
       "System.Linq.wasm": "sha256-nFCYyZvsJ564Ma6e3VWQS34LLPXI/VbxG7KP8tuCE2Y=",
       "System.Memory.wasm": "sha256-/m8VQjb1Zq0WQGKwyXZRk6PafDU3dQmiE+PZYtnPaZA=",
       "System.Net.Http.Json.wasm": "sha256-9fuo5cAlbzHEMs51n2iUGR+wrrWNFoVsrsJqn7RKiuM=",
-      "System.Net.Http.wasm": "sha256-FHieSozjev2f1w6CLNguvSA2FEze974pJJ90LNkm7gc=",
+      "System.Net.Http.wasm": "sha256-/q6NoU4f82mhe0J21iAFWWga1sVQc44Mb7udlV/IhMI=",
       "System.Net.Mail.wasm": "sha256-/ZN4eIdN2jEHrfMYctpSq866vFkkgaiBozDd1Zw6yDA=",
       "System.Net.Primitives.wasm": "sha256-BV4nfUDfRVXULYIKw3IFustUmvPGRRAFXGwtMTol1O4=",
       "System.Net.Requests.wasm": "sha256-QxNBilhLC9JSz9ovE5GipvfoGHVQCVwf2y+t/G+2AIc=",
@@ -122,7 +122,7 @@
       "System.wasm": "sha256-I4hhyMuUoHdrzDopL9tlnkL/Skg+0OO+gmkOXNT3dcg=",
       "netstandard.wasm": "sha256-pOAdCGwXz1Vp2gsxPttqfyWXo7x4AdNY+DuknJSAYr0=",
       "System.Private.CoreLib.wasm": "sha256-7Nv47UM2Xo4PSmNt0SmelwTNXaMveZ6729I+XmVf2D4=",
-      "SmartOnFhirApp.wasm": "sha256-Uatt484//42h65w0nNe5rgKu5C2rMvSFaqUNT+Vrn3o="
+      "SmartOnFhirApp.wasm": "sha256-nMhWOhIspVvwQQWav6aHhiqSPeXEljDIsq2NBdluvzA="
     }
   },
   "cacheBootResources": true,
