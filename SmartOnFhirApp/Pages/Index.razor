@@ -1008,6 +1008,12 @@ else if (patient != null)
                                  .ToList();
 
                 availableOrgs = ntuh.Concat(others).ToList();
+
+                // Auto-select NTUH if found
+                if (ntuh.Any())
+                {
+                    selectedSearchOrgId = ntuh.First().Id;
+                }
                 
                 await InvokeAsync(StateHasChanged);
             }
