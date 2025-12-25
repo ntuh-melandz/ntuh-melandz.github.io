@@ -95,7 +95,7 @@ graph TD
 
 ---
 
-## � 系統介面展示 (System Screenshots)
+## 系統介面展示 (System Screenshots)
 
 ### 1. 病患選擇與搜尋
 透過標準 FHIR API 取得病患清單，支援跨機構篩選與關鍵字搜尋。
@@ -219,4 +219,5 @@ sequenceDiagram
 - **[上架流程規範](docs/1014_SMART測試環境與上架流程_時賦.md)**
 
 **License**: 本專案授權需經由國立臺灣大學醫學院附設醫院（臺大醫院）同意方可使用。
+
 **Version**: 1.0
