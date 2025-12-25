@@ -207,6 +207,11 @@ else if (showPatientSelection && availablePatients != null)
                 <div class="text-center py-3 text-muted">
                     <p>找不到符合的病患資料</p>
                     <small>目前連線至: @fhirBaseUrl</small>
+                    @if (!string.IsNullOrEmpty(lastRequestUrl))
+                    {
+                        <br/>
+                        <small style="font-size: 0.7em; color: #999;">Debug URL: @lastRequestUrl</small>
+                    }
                 </div>
             }
 
@@ -923,6 +928,7 @@ else if (patient != null)
     private string selectedOrgId = "";
     private string selectedSearchOrgId = ""; // Default to All Hospitals for better compatibility
     private string searchQuery = "";
+    private string? lastRequestUrl; // Debug info
 
     // AI Summary
     private bool isGeneratingSummary = false;
@@ -1079,7 +1085,7 @@ else if (patient != null)
             var offset = (page - 1) * PAGE_SIZE;
             var result = await FhirService.GetPatientsAsync(fhirBaseUrl!, count: PAGE_SIZE, name: searchQuery, offset: offset, organizationId: selectedSearchOrgId);
             
-            
+            lastRequestUrl = result.RequestUrl; // Store debug info
             availablePatients = result.Patients;
             
             // 使用 FHIR Bundle 返回的總數

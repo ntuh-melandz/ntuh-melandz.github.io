@@ -56,8 +56,24 @@ foreach ($file in $dataFiles) {
             # 讀取 JSON 檔案
             $jsonContent = Get-Content $filePath -Raw -Encoding UTF8
 
-            # 發送 POST 請求到 FHIR Server (加上 -AllowInsecureRedirect 解決轉址問題)
-            $response = Invoke-RestMethod -Uri $FhirServerUrl -Method Post -Headers $headers -Body $jsonContent -AllowInsecureRedirect
+            # 檢查是否為 Bundle (Transaction)
+            $jsonObj = $jsonContent | ConvertFrom-Json
+            if ($jsonObj.resourceType -eq "Bundle" -and $jsonObj.type -eq "transaction") {
+                # 如果是 Transaction Bundle，直接 POST 到根目錄，FHIR Server 會處理內部的 PUT
+                $response = Invoke-RestMethod -Uri $FhirServerUrl -Method Post -Headers $headers -Body $jsonContent -AllowInsecureRedirect
+            }
+            else {
+                # 如果是單一資源，嘗試使用 PUT (如果資源有 ID)
+                if ($jsonObj.id) {
+                    $putUrl = "$FhirServerUrl/$($jsonObj.resourceType)/$($jsonObj.id)"
+                    $response = Invoke-RestMethod -Uri $putUrl -Method Put -Headers $headers -Body $jsonContent -AllowInsecureRedirect
+                }
+                else {
+                    # 沒有 ID 則使用 POST
+                    $postUrl = "$FhirServerUrl/$($jsonObj.resourceType)"
+                    $response = Invoke-RestMethod -Uri $postUrl -Method Post -Headers $headers -Body $jsonContent -AllowInsecureRedirect
+                }
+            }
 
             Write-Host "  ✓ $file 匯入成功" -ForegroundColor Green
             $successCount++

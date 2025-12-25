@@ -62,8 +62,9 @@ public class FhirClientService
         return null;
     }
 
-    public async Task<(List<Patient>? Patients, int Total)> GetPatientsAsync(string fhirBaseUrl, int count = 20, string? name = null, int offset = 0, string? organizationId = null)
+    public async Task<(List<Patient>? Patients, int Total, string? RequestUrl)> GetPatientsAsync(string fhirBaseUrl, int count = 20, string? name = null, int offset = 0, string? organizationId = null)
     {
+        string? debugUrl = null;
         try
         {
             var client = await GetAuthenticatedHttpClientAsync();
@@ -85,6 +86,7 @@ public class FhirClientService
                 nameUrl += $"&name={Uri.EscapeDataString(name)}";
             }
             
+            debugUrl = nameUrl; // Capture for debugging
             var nameTask = client.GetAsync(nameUrl);
             Task<HttpResponseMessage>? idTask = null;
 
@@ -165,14 +167,14 @@ public class FhirClientService
             }
             
             
-            return (patients, totalCount);
+            return (patients, totalCount, debugUrl);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error getting patients: {ex.Message}");
         }
 
-        return (null, 0);
+        return (null, 0, debugUrl);
     }
 
     public async Task<List<Observation>?> GetObservationsAsync(string fhirBaseUrl, string patientId)
