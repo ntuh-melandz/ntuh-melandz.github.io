@@ -2,6 +2,7 @@ using SmartOnFhirApp.Models;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Components;
 
 namespace SmartOnFhirApp.Services;
 
@@ -9,15 +10,32 @@ public class FhirClientService
 {
     private readonly HttpClient _httpClient;
     private readonly SmartAuthService _authService;
+    private readonly NavigationManager _navigationManager;
 
-    public FhirClientService(HttpClient httpClient, SmartAuthService authService)
+    public FhirClientService(HttpClient httpClient, SmartAuthService authService, NavigationManager navigationManager)
     {
         _httpClient = httpClient;
         _authService = authService;
+        _navigationManager = navigationManager;
     }
 
     private async Task<HttpClient> GetAuthenticatedHttpClientAsync()
     {
+        // Check for token expiration and try to refresh
+        if (await _authService.IsTokenExpiredAsync())
+        {
+            Console.WriteLine("Token expired, attempting refresh...");
+            var refreshed = await _authService.RefreshTokenAsync();
+            if (!refreshed)
+            {
+                Console.WriteLine("Token refresh failed. Redirecting to launch.");
+                await _authService.ClearStoredDataAsync();
+                _navigationManager.NavigateTo("launch");
+                return _httpClient; // Return client anyway, but navigation will happen
+            }
+            Console.WriteLine("Token refreshed successfully.");
+        }
+
         var token = await _authService.GetStoredAccessTokenAsync();
         
         // 在 WASM 中，我們直接修改注入的 HttpClient 標頭（或建立新請求）
