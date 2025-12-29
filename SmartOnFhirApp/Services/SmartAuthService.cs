@@ -174,16 +174,31 @@ public class SmartAuthService
     {
         try
         {
+            var token = await GetStoredAccessTokenAsync();
+            if (string.IsNullOrEmpty(token))
+            {
+                return true;
+            }
+
             var expiresAt = await _localStorage.GetItemAsync<DateTime?>(ExpiresAtStorageKey);
             if (expiresAt.HasValue)
             {
                 // Add a buffer of 5 minutes to refresh before it actually expires
                 return DateTime.UtcNow.AddMinutes(5) >= expiresAt.Value;
             }
+            
+            // If we have a token but no expiration date, we don't know if it's expired.
+            // But if we have a refresh token, it's safer to try and refresh it.
+            var refreshToken = await _localStorage.GetItemAsync<string>(RefreshTokenStorageKey);
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                return true;
+            }
         }
         catch
         {
-            // If we can't parse the date, assume it's not expired or handle gracefully
+            // If we can't parse the date, assume it's expired to be safe
+            return true;
         }
         return false;
     }

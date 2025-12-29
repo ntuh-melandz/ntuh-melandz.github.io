@@ -50,9 +50,9 @@
     private const string STANDALONE_FHIR_SERVER = "https://thas.mohw.gov.tw/v/r4/sim/WzIsIiIsIiIsIkFVVE8iLDAsMCwwLCIiLCIiLCIiLCIiLCIiLCIiLCIiLDAsMSwiIl0/fhir";
     
     // EHR Launch 需要 launch scope
-    private const string EHR_LAUNCH_SCOPES = "launch openid fhirUser patient/*.read";
+    private const string EHR_LAUNCH_SCOPES = "launch openid fhirUser patient/*.read offline_access";
     // Standalone Launch 使用 launch/patient
-    private const string STANDALONE_SCOPES = "openid fhirUser patient/*.read launch/patient";
+    private const string STANDALONE_SCOPES = "openid fhirUser patient/*.read launch/patient offline_access";
 
     protected override async Task OnInitializedAsync()
     {

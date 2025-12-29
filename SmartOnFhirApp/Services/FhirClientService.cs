@@ -60,6 +60,18 @@ public class FhirClientService
         return _httpClient;
     }
 
+    private async Task<bool> CheckResponseAsync(HttpResponseMessage response)
+    {
+        if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+        {
+            Console.WriteLine("401 Unauthorized detected. Clearing token and redirecting to launch.");
+            await _authService.ClearStoredDataAsync();
+            _navigationManager.NavigateTo("launch", forceLoad: true);
+            return false;
+        }
+        return true;
+    }
+
     public async Task<Patient?> GetPatientAsync(string fhirBaseUrl, string patientId)
     {
         try
@@ -68,6 +80,7 @@ public class FhirClientService
             var url = $"{fhirBaseUrl}/Patient/{patientId}";
 
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -112,17 +125,18 @@ public class FhirClientService
             }
             
             debugUrl = nameUrl; // Capture for debugging
-            var nameTask = client.GetAsync(nameUrl);
-            Task<HttpResponseMessage>? idTask = null;
+            var nameResponse = await client.GetAsync(nameUrl);
+            if (!await CheckResponseAsync(nameResponse)) return (null, 0, debugUrl);
+
+            HttpResponseMessage? idResponse = null;
 
             // 2. Search by ID
             if (!string.IsNullOrEmpty(name) && !name.Contains(" "))
             {
                 var idUrl = $"{fhirBaseUrl}/Patient?_id={Uri.EscapeDataString(name)}&_include=Patient:organization";
-                idTask = client.GetAsync(idUrl);
+                idResponse = await client.GetAsync(idUrl);
+                if (!await CheckResponseAsync(idResponse)) return (null, 0, debugUrl);
             }
-
-            await Task.WhenAll(new List<Task> { nameTask, idTask ?? Task.CompletedTask });
             
             var organizations = new Dictionary<string, string>();
 
@@ -170,12 +184,12 @@ public class FhirClientService
             }
 
             // Process Name Results
-            totalCount = await ProcessBundle(nameTask.Result);
+            totalCount = await ProcessBundle(nameResponse);
             
             // Process ID Results
-            if (idTask != null)
+            if (idResponse != null)
             {
-                await ProcessBundle(idTask.Result);
+                await ProcessBundle(idResponse);
             }
 
             // Map Organization Names to Patients
@@ -210,6 +224,7 @@ public class FhirClientService
             var url = $"{fhirBaseUrl}/Observation?patient={patientId}";
 
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -237,6 +252,7 @@ public class FhirClientService
             var url = $"{fhirBaseUrl}/Condition?patient={patientId}";
 
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -264,6 +280,7 @@ public class FhirClientService
             var url = $"{fhirBaseUrl}/MedicationRequest?patient={patientId}";
 
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -291,6 +308,7 @@ public class FhirClientService
             var url = $"{fhirBaseUrl}/Organization/{organizationId}";
 
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -418,6 +436,7 @@ public class FhirClientService
             var url = $"{fhirBaseUrl}/Organization";
 
             var response = await client.PostAsJsonAsync(url, organization);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -457,6 +476,7 @@ public class FhirClientService
             // 3. PUT updated patient
             var url = $"{fhirBaseUrl}/Patient/{patientId}";
             var response = await client.PutAsJsonAsync(url, patient);
+            if (!await CheckResponseAsync(response)) return false;
 
             if (!response.IsSuccessStatusCode)
             {
@@ -482,6 +502,7 @@ public class FhirClientService
             var url = $"{fhirBaseUrl}/Organization?_count=200&_sort=-_lastUpdated";
 
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -509,6 +530,7 @@ public class FhirClientService
 
             var url = $"{fhirBaseUrl}/Patient/{patientId}";
             var response = await client.PutAsJsonAsync(url, patient);
+            if (!await CheckResponseAsync(response)) return false;
 
             return response.IsSuccessStatusCode;
         }
@@ -534,6 +556,7 @@ public class FhirClientService
             }
 
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -575,6 +598,7 @@ public class FhirClientService
             var url = $"{fhirBaseUrl}/Media/{mediaId}";
 
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -598,6 +622,7 @@ public class FhirClientService
             var url = $"{fhirBaseUrl}/Media?subject=Patient/{patientId}";
 
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {
@@ -688,6 +713,8 @@ public class FhirClientService
 
             Console.WriteLine($"[AuditEvent] Posting to {url}...");
             var response = await client.PostAsJsonAsync(url, auditEvent);
+            if (!await CheckResponseAsync(response)) return (false, (int)response.StatusCode, "Unauthorized");
+
             var responseBody = await response.Content.ReadAsStringAsync();
 
             if (response.IsSuccessStatusCode)
@@ -720,6 +747,7 @@ public class FhirClientService
 
             Console.WriteLine($"[AuditEvent] Fetching from {url}...");
             var response = await client.GetAsync(url);
+            if (!await CheckResponseAsync(response)) return null;
 
             if (response.IsSuccessStatusCode)
             {

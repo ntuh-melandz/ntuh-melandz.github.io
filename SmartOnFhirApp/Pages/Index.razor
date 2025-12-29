@@ -1040,10 +1040,17 @@ else if (patient != null)
                 await JS.InvokeVoidAsync("sessionStorage.removeItem", "patientId"); // Clear from session
             }
 
-            // Access Token 檢查 - 衛福部測試環境不需要 token
+            // Access Token 檢查
             if (string.IsNullOrEmpty(accessToken))
             {
-                Console.WriteLine("警告：未找到 Access Token。使用公開 FHIR Server 模式。");
+                // 如果是模擬器環境，必須要有 token
+                if (fhirBaseUrl.Contains("/sim/"))
+                {
+                    errorMessage = "模擬器環境需要授權。請點擊下方按鈕開始授權。";
+                    isLoading = false;
+                    return;
+                }
+                Console.WriteLine("警告：未找到 Access Token。嘗試使用公開模式。");
             }
 
             loadingStatus = "正在載入病患詳細資料...";
