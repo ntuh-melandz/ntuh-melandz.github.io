@@ -245,7 +245,7 @@ namespace SmartOnFhirApp.Services
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AiService] 主要服務失敗: {ex.Message}，嘗試切換至 Ollama...");
+                    Console.WriteLine($"[AiService] 主要服務失敗: {ex.Message}，嘗試備援服務...");
                 }
             }
             else
@@ -253,43 +253,34 @@ namespace SmartOnFhirApp.Services
                 Console.WriteLine("[AiService] 未設定主要服務 (AiService:Endpoint)，直接使用 Ollama。");
             }
 
-            // 2. Fallback 到 Ollama (OllamaService)
-            var ollamaEndpoint = _configuration["OllamaService:Endpoint"];
-            var ollamaModel = _configuration["OllamaService:Model"] ?? "devstral-small-2";
+            // 2. Fallback 到備援 OpenRouter 服務 (FallbackService)
+            var fallbackEndpoint = _configuration["FallbackService:Endpoint"];
+            var fallbackModel = _configuration["FallbackService:Model"] ?? "google/gemma-3-12b-it:free";
 
-            if (!string.IsNullOrEmpty(ollamaEndpoint))
+            if (!string.IsNullOrEmpty(fallbackEndpoint))
             {
-                 // 確保 Endpoint 包含 /api/generate
-                if (!ollamaEndpoint.EndsWith("/api/generate"))
+                if (!fallbackEndpoint.EndsWith("/chat/completions") && !fallbackEndpoint.Contains("generate"))
                 {
-                    ollamaEndpoint = ollamaEndpoint.TrimEnd('/') + "/api/generate";
+                    fallbackEndpoint = fallbackEndpoint.TrimEnd('/') + "/chat/completions";
                 }
 
                 try
                 {
-                    Console.WriteLine($"[AiService] 嘗試 Ollama 服務: {ollamaEndpoint} ({ollamaModel})");
-                    return await CallOllamaAsync(_httpClient, ollamaEndpoint, ollamaModel, patientContext);
+                    Console.WriteLine($"[AiService] 嘗試備援服務: {fallbackEndpoint} (Model: {fallbackModel})");
+                    var result = await CallPrimaryAiAsync(_httpClient, fallbackEndpoint, fallbackModel, primaryKey ?? "", patientContext);
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        return result;
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"[AiService] 設定的 Ollama 服務失敗: {ex.Message}，嘗試預設值...");
+                    Console.WriteLine($"[AiService] 備援服務失敗: {ex.Message}");
                 }
             }
 
-            // 3. 最後 Fallback 到預設 Localhost Ollama
-            var defaultEndpoint = "http://localhost:11434/api/generate";
-            var defaultModel = "devstral-small-2"; // 預設模型
-            
-            try 
-            {
-                Console.WriteLine($"[AiService] 嘗試預設 Ollama: {defaultEndpoint}");
-                return await CallOllamaAsync(_httpClient, defaultEndpoint, defaultModel, patientContext);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[AiService] 全部服務皆失敗: {ex.Message}");
-                return $"⚠️ AI 服務暫時無法使用 (所有備援皆失敗)";
-            }
+            Console.WriteLine($"[AiService] 全部服務皆失敗");
+            return $"⚠️ AI 服務暫時無法使用 (所有備援皆失敗)";
         }
 
         private async Task<string> CallPrimaryAiAsync(HttpClient httpClient, string endpoint, string model, string apiKey, string patientContext)
