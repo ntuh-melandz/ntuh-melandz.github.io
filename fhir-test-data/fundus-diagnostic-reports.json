@@ -37,7 +37,7 @@
                 "issued": "2024-12-18T10:05:00+08:00",
                 "performer": [
                     {
-                        "reference": "Organization/org-ntuh",
+                        "reference": "Organization/org-0401180014",
                         "display": "臺灣大學醫學院附設醫院"
                     },
                     {
@@ -112,7 +112,7 @@
                 "issued": "2024-12-18T11:35:00+08:00",
                 "performer": [
                     {
-                        "reference": "Organization/org-ntuh",
+                        "reference": "Organization/org-0401180014",
                         "display": "臺灣大學醫學院附設醫院"
                     },
                     {
@@ -181,7 +181,7 @@
                 "issued": "2024-12-17T14:05:00+08:00",
                 "performer": [
                     {
-                        "reference": "Organization/org-ntuh",
+                        "reference": "Organization/org-0401180014",
                         "display": "臺灣大學醫學院附設醫院"
                     },
                     {
@@ -250,7 +250,7 @@
                 "issued": "2024-12-16T09:05:00+08:00",
                 "performer": [
                     {
-                        "reference": "Organization/org-ntuh",
+                        "reference": "Organization/org-0401180014",
                         "display": "臺灣大學醫學院附設醫院"
                     },
                     {
@@ -319,7 +319,7 @@
                 "issued": "2024-12-15T16:35:00+08:00",
                 "performer": [
                     {
-                        "reference": "Organization/org-ntuh",
+                        "reference": "Organization/org-0401180014",
                         "display": "臺灣大學醫學院附設醫院"
                     },
                     {

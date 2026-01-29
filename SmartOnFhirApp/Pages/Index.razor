@@ -55,7 +55,7 @@ else if (patient != null && !showPatientSelection)
                         @if (availableOrgs != null)
                         {
                             // First try to find NTUH
-                            var ntuh = availableOrgs.FirstOrDefault(o => o.Id == "org-ntuh" || 
+                            var ntuh = availableOrgs.FirstOrDefault(o => o.Id == "org-0401180014" || 
                                                                    o.Name?.Contains("臺灣大學醫學院附設醫院") == true ||
                                                                    o.Name?.Contains("臺大醫院") == true);
                             
@@ -997,8 +997,8 @@ else if (patient != null)
                 StateHasChanged();
                 await Task.Delay(50); // Small delay to allow UI to clear
 
-                // NTUH first (by ID "org-ntuh" or Name), then others
-                var ntuh = orgs.Where(o => o.Id == "org-ntuh" || 
+                // NTUH first (by ID "org-0401180014" or Name), then others
+                var ntuh = orgs.Where(o => o.Id == "org-0401180014" || 
                                          o.Name?.Contains("臺灣大學醫學院附設醫院") == true ||
                                          o.Name?.Contains("臺大醫院") == true)
                              .ToList();

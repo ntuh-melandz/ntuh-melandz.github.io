@@ -3,10 +3,10 @@
     "type": "transaction",
     "entry": [
         {
-            "fullUrl": "urn:uuid:org-ntuh",
+            "fullUrl": "urn:uuid:org-0401180014",
             "resource": {
                 "resourceType": "Organization",
-                "id": "org-ntuh",
+                "id": "org-0401180014",
                 "identifier": [
                     {
                         "system": "https://www.nhi.gov.tw/hospital",
@@ -25,7 +25,7 @@
                         ]
                     }
                 ],
-                "name": "臺灣大學醫學院附設醫院",
+                "name": "國立臺灣大學醫學院附設醫院",
                 "alias": [
                     "台大醫院",
                     "NTUH"
@@ -55,7 +55,7 @@
             },
             "request": {
                 "method": "PUT",
-                "url": "Organization/org-ntuh"
+                "url": "Organization/org-0401180014"
             }
         }
     ]
