@@ -29,7 +29,7 @@
           ]
         },
         "subject": {
-          "reference": "Patient/patient-001"
+          "reference": "Patient/patient-ntuh-001"
         },
         "effectiveDateTime": "2024-12-01T10:30:00Z",
         "component": [
@@ -101,7 +101,7 @@
           ]
         },
         "subject": {
-          "reference": "Patient/patient-002"
+          "reference": "Patient/patient-ntuh-002"
         },
         "effectiveDateTime": "2024-12-05T09:00:00Z",
         "valueQuantity": {
@@ -143,7 +143,7 @@
           ]
         },
         "subject": {
-          "reference": "Patient/patient-003"
+          "reference": "Patient/patient-ntuh-003"
         },
         "effectiveDateTime": "2024-12-03T14:20:00Z",
         "valueQuantity": {
@@ -185,7 +185,7 @@
           ]
         },
         "subject": {
-          "reference": "Patient/patient-004"
+          "reference": "Patient/patient-ntuh-004"
         },
         "effectiveDateTime": "2024-12-07T11:15:00Z",
         "valueQuantity": {
@@ -227,7 +227,7 @@
           ]
         },
         "subject": {
-          "reference": "Patient/patient-005"
+          "reference": "Patient/patient-ntuh-005"
         },
         "effectiveDateTime": "2024-12-08T08:30:00Z",
         "valueQuantity": {

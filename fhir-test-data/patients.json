@@ -3,10 +3,10 @@
   "type": "transaction",
   "entry": [
     {
-      "fullUrl": "urn:uuid:patient-001",
+      "fullUrl": "urn:uuid:patient-ntuh-001",
       "resource": {
         "resourceType": "Patient",
-        "id": "patient-001",
+        "id": "patient-ntuh-001",
         "identifier": [
           {
             "system": "http://hospital.example.org/patients",
@@ -48,14 +48,14 @@
       },
       "request": {
         "method": "PUT",
-        "url": "Patient/patient-001"
+        "url": "Patient/patient-ntuh-001"
       }
     },
     {
-      "fullUrl": "urn:uuid:patient-002",
+      "fullUrl": "urn:uuid:patient-ntuh-002",
       "resource": {
         "resourceType": "Patient",
-        "id": "patient-002",
+        "id": "patient-ntuh-002",
         "identifier": [
           {
             "system": "http://hospital.example.org/patients",
@@ -97,14 +97,14 @@
       },
       "request": {
         "method": "PUT",
-        "url": "Patient/patient-002"
+        "url": "Patient/patient-ntuh-002"
       }
     },
     {
-      "fullUrl": "urn:uuid:patient-003",
+      "fullUrl": "urn:uuid:patient-ntuh-003",
       "resource": {
         "resourceType": "Patient",
-        "id": "patient-003",
+        "id": "patient-ntuh-003",
         "identifier": [
           {
             "system": "http://hospital.example.org/patients",
@@ -146,14 +146,14 @@
       },
       "request": {
         "method": "PUT",
-        "url": "Patient/patient-003"
+        "url": "Patient/patient-ntuh-003"
       }
     },
     {
-      "fullUrl": "urn:uuid:patient-004",
+      "fullUrl": "urn:uuid:patient-ntuh-004",
       "resource": {
         "resourceType": "Patient",
-        "id": "patient-004",
+        "id": "patient-ntuh-004",
         "identifier": [
           {
             "system": "http://hospital.example.org/patients",
@@ -195,14 +195,14 @@
       },
       "request": {
         "method": "PUT",
-        "url": "Patient/patient-004"
+        "url": "Patient/patient-ntuh-004"
       }
     },
     {
-      "fullUrl": "urn:uuid:patient-005",
+      "fullUrl": "urn:uuid:patient-ntuh-005",
       "resource": {
         "resourceType": "Patient",
-        "id": "patient-005",
+        "id": "patient-ntuh-005",
         "identifier": [
           {
             "system": "http://hospital.example.org/patients",
@@ -244,7 +244,7 @@
       },
       "request": {
         "method": "PUT",
-        "url": "Patient/patient-005"
+        "url": "Patient/patient-ntuh-005"
       }
     }
   ]

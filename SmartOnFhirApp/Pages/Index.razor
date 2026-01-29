@@ -997,12 +997,15 @@ else if (patient != null)
                 StateHasChanged();
                 await Task.Delay(50); // Small delay to allow UI to clear
 
+                // Filter out deprecated org-ntuh (use org-0401180014 instead)
+                orgs = orgs.Where(o => o.Id != "org-ntuh").ToList();
+
                 // NTUH first (by ID "org-0401180014" or Name), then others
-                var ntuh = orgs.Where(o => o.Id == "org-0401180014" || 
+                var ntuh = orgs.Where(o => o.Id == "org-0401180014" ||
                                          o.Name?.Contains("臺灣大學醫學院附設醫院") == true ||
                                          o.Name?.Contains("臺大醫院") == true)
                              .ToList();
-                    
+
                 var others = orgs.Except(ntuh) // Use Except to avoid duplicates safely
                                  .OrderBy(o => o.Name)
                                  .ToList();
