@@ -141,6 +141,13 @@
                 // 儲存 Token
                 await AuthService.StoreTokenResponseAsync(tokenResponse, iss);
 
+                // 若 Token Response 帶有 patient context，直接存入並跳轉到該病患頁面
+                if (!string.IsNullOrEmpty(tokenResponse.Patient))
+                {
+                    await AuthService.StorePatientIdAsync(tokenResponse.Patient);
+                    Console.WriteLine($"[Redirect] Patient context from token: {tokenResponse.Patient}");
+                }
+
                 // 成功，導回檢視頁面
                 nav.NavigateTo("/");
             }

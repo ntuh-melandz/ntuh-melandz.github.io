@@ -118,14 +118,21 @@ public class SmartAuthService
                 { "client_id", clientId }
             };
 
+            var request = new HttpRequestMessage(HttpMethod.Post, tokenEndpoint)
+            {
+                Content = new FormUrlEncodedContent(requestData)
+            };
+
+            // Confidential client: 使用 HTTP Basic Authentication
             if (!string.IsNullOrEmpty(clientSecret))
             {
-                requestData["client_secret"] = clientSecret;
+                var credentials = Convert.ToBase64String(
+                    System.Text.Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
+                request.Headers.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
             }
 
-            var response = await _httpClient.PostAsync(
-                tokenEndpoint,
-                new FormUrlEncodedContent(requestData));
+            var response = await _httpClient.SendAsync(request);
 
             if (response.IsSuccessStatusCode)
             {
@@ -236,14 +243,21 @@ public class SmartAuthService
                 { "client_id", clientId }
             };
 
+            var request = new HttpRequestMessage(HttpMethod.Post, config.TokenEndpoint)
+            {
+                Content = new FormUrlEncodedContent(requestData)
+            };
+
+            // Confidential client: 使用 HTTP Basic Authentication
             if (!string.IsNullOrEmpty(clientSecret))
             {
-                requestData["client_secret"] = clientSecret;
+                var credentials = Convert.ToBase64String(
+                    System.Text.Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
+                request.Headers.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
             }
 
-            var response = await _httpClient.PostAsync(
-                config.TokenEndpoint,
-                new FormUrlEncodedContent(requestData));
+            var response = await _httpClient.SendAsync(request);
 
             if (response.IsSuccessStatusCode)
             {
