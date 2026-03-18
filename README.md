@@ -178,7 +178,19 @@ dotnet run
 ```
 瀏覽器開啟：`https://localhost:5001`
 
-### 3. SMART Launch 流程
+### 3. SMART on FHIR 設定資訊
+
+| 項目 | 值 |
+|------|-----|
+| **Launch URL** | `https://ntuh-melandz.github.io/launch` |
+| **Redirect URI** | `https://ntuh-melandz.github.io/redirect` |
+| **EHR Launch Scopes** | `launch openid fhirUser patient/*.read offline_access` |
+| **Standalone Scopes** | `openid fhirUser patient/*.read launch/patient offline_access` |
+| **Client Type** | Confidential Client |
+
+> 本地測試時 Redirect URI 為 `https://localhost:5001/redirect`
+
+### 4. SMART Launch 流程
 
 ```mermaid
 sequenceDiagram
