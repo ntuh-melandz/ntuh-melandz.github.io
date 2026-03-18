@@ -184,8 +184,8 @@ dotnet run
 |------|-----|
 | **Launch URL** | `https://ntuh-melandz.github.io/launch` |
 | **Redirect URI** | `https://ntuh-melandz.github.io/redirect` |
-| **EHR Launch Scopes** | `launch openid fhirUser patient/*.read offline_access` |
-| **Standalone Scopes** | `openid fhirUser patient/*.read launch/patient offline_access` |
+| **EHR Launch Scopes** | `launch openid fhirUser patient/*.read patient/AuditEvent.write offline_access` |
+| **Standalone Scopes** | `openid fhirUser patient/*.read patient/AuditEvent.write launch/patient offline_access` |
 | **Client Type** | Confidential Client |
 
 > 本地測試時 Redirect URI 為 `https://localhost:5001/redirect`
