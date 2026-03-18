@@ -130,7 +130,7 @@ graph TD
   - 顯示檢查項目的 LOINC 代碼與名稱。
   - 透過 `Media` resource 載入高解析度影像。
   - 顯示 AI 判讀結論（如：糖尿病視網膜病變嚴重程度）。
-  - **互動式檢視**：支援點擊放大預覽影像。
+  - **互動式檢視**：支援點擊放大預覽影像，並提供負片（反色）效果切換，便於觀察影像細節。
 
 ### 3. 臨床數據整合 (Clinical Data)
 - **FHIR Resource**:
@@ -186,11 +186,22 @@ dotnet run
 | **Redirect URI** | `https://ntuh-melandz.github.io/redirect` |
 | **EHR Launch Scopes** | `launch openid fhirUser patient/*.read patient/AuditEvent.write offline_access` |
 | **Standalone Scopes** | `openid fhirUser patient/*.read patient/AuditEvent.write launch/patient offline_access` |
-| **Client Type** | Confidential Client |
+| **Client Type** | Confidential Client (HTTP Basic Auth) |
 
 > 本地測試時 Redirect URI 為 `https://localhost:5001/redirect`
 
-### 4. SMART Launch 流程
+### 4. 應用程式設定 (`wwwroot/appsettings.json`)
+
+| 設定項 | 說明 |
+|--------|------|
+| `Fhir:ClientId` | SMART on FHIR Client ID |
+| `Fhir:EncryptedClientSecret` | XOR 加密後的 Client Secret |
+| `Fhir:DefaultOrganizationId` | 預設醫院代碼（用於病患清單篩選） |
+| `AiService:Model` | 主要 AI 模型 |
+| `FallbackService:Model` | 第一備援 AI 模型 |
+| `FallbackService2:Model` | 第二備援 AI 模型 |
+
+### 5. SMART Launch 流程
 
 ```mermaid
 sequenceDiagram
@@ -232,4 +243,4 @@ sequenceDiagram
 
 **License**: 本專案授權需經由國立臺灣大學醫學院附設醫院（臺大醫院）同意方可使用。
 
-**Version**: 1.0
+**Version**: 1.1
