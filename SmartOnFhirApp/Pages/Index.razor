@@ -7,6 +7,7 @@
 @inject HttpClient Http
 @using Markdig
 @inject IJSRuntime JS
+@inject IConfiguration Config
 
 <PageTitle>病患資料</PageTitle>
 
@@ -55,7 +56,7 @@ else if (patient != null && !showPatientSelection)
                         @if (availableOrgs != null)
                         {
                             // First try to find NTUH
-                            var ntuh = availableOrgs.FirstOrDefault(o => o.Id == "org-0401180014" || 
+                            var ntuh = availableOrgs.FirstOrDefault(o => o.Id == defaultOrgId ||
                                                                    o.Name?.Contains("臺灣大學醫學院附設醫院") == true ||
                                                                    o.Name?.Contains("臺大醫院") == true);
                             
@@ -926,7 +927,8 @@ else if (patient != null)
     private bool showOrgSelector = false;
     private List<Organization>? availableOrgs;
     private string selectedOrgId = "";
-    private string selectedSearchOrgId = ""; // Default to All Hospitals for better compatibility
+    private string selectedSearchOrgId = "";
+    private string defaultOrgId = "org-0401180014"; // 從 appsettings 載入
     private string searchQuery = "";
     private string? lastRequestUrl; // Debug info
 
@@ -972,6 +974,9 @@ else if (patient != null)
             loadingStatus = "正在讀取設定...";
             StateHasChanged();
 
+            // 從 appsettings 讀取預設醫院代碼
+            defaultOrgId = Config["Fhir:DefaultOrganizationId"] ?? "org-0401180014";
+
             // 取得儲存的資料
             fhirBaseUrl = await AuthService.GetStoredFhirBaseUrlAsync();
             patientId = await AuthService.GetStoredPatientIdAsync();
@@ -997,11 +1002,11 @@ else if (patient != null)
                 StateHasChanged();
                 await Task.Delay(50); // Small delay to allow UI to clear
 
-                // Filter out deprecated org-ntuh (use org-0401180014 instead)
+                // Filter out deprecated org-ntuh
                 orgs = orgs.Where(o => o.Id != "org-ntuh").ToList();
 
-                // NTUH first (by ID "org-0401180014" or Name), then others
-                var ntuh = orgs.Where(o => o.Id == "org-0401180014" ||
+                // 預設醫院排最前面
+                var ntuh = orgs.Where(o => o.Id == defaultOrgId ||
                                          o.Name?.Contains("臺灣大學醫學院附設醫院") == true ||
                                          o.Name?.Contains("臺大醫院") == true)
                              .ToList();
