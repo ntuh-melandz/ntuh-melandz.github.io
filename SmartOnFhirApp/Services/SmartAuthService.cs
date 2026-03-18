@@ -105,7 +105,8 @@ public class SmartAuthService
         string tokenEndpoint,
         string code,
         string redirectUri,
-        string clientId)
+        string clientId,
+        string? clientSecret = null)
     {
         try
         {
@@ -116,6 +117,11 @@ public class SmartAuthService
                 { "redirect_uri", redirectUri },
                 { "client_id", clientId }
             };
+
+            if (!string.IsNullOrEmpty(clientSecret))
+            {
+                requestData["client_secret"] = clientSecret;
+            }
 
             var response = await _httpClient.PostAsync(
                 tokenEndpoint,
@@ -208,6 +214,7 @@ public class SmartAuthService
         try
         {
             var clientId = _configuration["Fhir:ClientId"] ?? "ntuh_fhir_app";
+            var clientSecret = GetDecryptedClientSecret();
             var refreshToken = await _localStorage.GetItemAsync<string>(RefreshTokenStorageKey);
             var fhirBaseUrl = await GetStoredFhirBaseUrlAsync();
 
@@ -228,6 +235,11 @@ public class SmartAuthService
                 { "refresh_token", refreshToken },
                 { "client_id", clientId }
             };
+
+            if (!string.IsNullOrEmpty(clientSecret))
+            {
+                requestData["client_secret"] = clientSecret;
+            }
 
             var response = await _httpClient.PostAsync(
                 config.TokenEndpoint,
@@ -260,5 +272,29 @@ public class SmartAuthService
     {
         var token = await GetStoredAccessTokenAsync();
         return !string.IsNullOrEmpty(token);
+    }
+
+    public string? GetDecryptedClientSecret()
+    {
+        var encrypted = _configuration["Fhir:EncryptedClientSecret"];
+        if (string.IsNullOrEmpty(encrypted)) return null;
+
+        try
+        {
+            var keyBytes = System.Text.Encoding.UTF8.GetBytes("SmartOnFhirAppSecret");
+            var cipherBytes = Convert.FromBase64String(encrypted);
+            var plainBytes = new byte[cipherBytes.Length];
+
+            for (int i = 0; i < cipherBytes.Length; i++)
+            {
+                plainBytes[i] = (byte)(cipherBytes[i] ^ keyBytes[i % keyBytes.Length]);
+            }
+
+            return System.Text.Encoding.UTF8.GetString(plainBytes);
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

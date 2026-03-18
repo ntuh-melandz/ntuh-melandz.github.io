@@ -120,6 +120,7 @@
             }
 
             var clientId = Config["Fhir:ClientId"] ?? "ntuh_fhir_app";
+            var clientSecret = AuthService.GetDecryptedClientSecret();
 
             // 交換 Token
             var redirectUri = nav.BaseUri + "redirect"; // 必須與 Launch 時一致
@@ -127,7 +128,8 @@
                 config.TokenEndpoint,
                 code,
                 redirectUri,
-                clientId
+                clientId,
+                clientSecret
             );
 
             if (tokenResponse != null)

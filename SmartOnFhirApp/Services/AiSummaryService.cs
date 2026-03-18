@@ -279,6 +279,32 @@ namespace SmartOnFhirApp.Services
                 }
             }
 
+            // 3. Fallback 到第二備援 OpenRouter 服務 (FallbackService2)
+            var fallback2Endpoint = _configuration["FallbackService2:Endpoint"];
+            var fallback2Model = _configuration["FallbackService2:Model"] ?? "nvidia/nemotron-3-super-120b-a12b:free";
+
+            if (!string.IsNullOrEmpty(fallback2Endpoint))
+            {
+                if (!fallback2Endpoint.EndsWith("/chat/completions") && !fallback2Endpoint.Contains("generate"))
+                {
+                    fallback2Endpoint = fallback2Endpoint.TrimEnd('/') + "/chat/completions";
+                }
+
+                try
+                {
+                    Console.WriteLine($"[AiService] 嘗試第二備援服務: {fallback2Endpoint} (Model: {fallback2Model})");
+                    var result = await CallPrimaryAiAsync(_httpClient, fallback2Endpoint, fallback2Model, primaryKey ?? "", patientContext);
+                    if (!string.IsNullOrEmpty(result))
+                    {
+                        return result;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[AiService] 第二備援服務失敗: {ex.Message}");
+                }
+            }
+
             Console.WriteLine($"[AiService] 全部服務皆失敗");
             return $"⚠️ AI 服務暫時無法使用 (所有備援皆失敗)";
         }
