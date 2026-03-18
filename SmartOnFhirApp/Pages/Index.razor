@@ -56,9 +56,7 @@ else if (patient != null && !showPatientSelection)
                         @if (availableOrgs != null)
                         {
                             // First try to find NTUH
-                            var ntuh = availableOrgs.FirstOrDefault(o => o.Id == defaultOrgId ||
-                                                                   o.Name?.Contains("臺灣大學醫學院附設醫院") == true ||
-                                                                   o.Name?.Contains("臺大醫院") == true);
+                            var ntuh = availableOrgs.FirstOrDefault(o => o.Id == defaultOrgId);
                             
                             if (ntuh != null)
                             {
@@ -1006,9 +1004,7 @@ else if (patient != null)
                 orgs = orgs.Where(o => o.Id != "org-ntuh").ToList();
 
                 // 預設醫院排最前面
-                var ntuh = orgs.Where(o => o.Id == defaultOrgId ||
-                                         o.Name?.Contains("臺灣大學醫學院附設醫院") == true ||
-                                         o.Name?.Contains("臺大醫院") == true)
+                var ntuh = orgs.Where(o => o.Id == defaultOrgId)
                              .ToList();
 
                 var others = orgs.Except(ntuh) // Use Except to avoid duplicates safely
