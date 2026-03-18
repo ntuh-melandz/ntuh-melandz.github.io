@@ -91,9 +91,7 @@ def main():
     zip_size = os.path.getsize(zip_path)
     print(f"Output ZIP:  {zip_path} ({zip_size / 1024:.0f} KB)")
 
-    # 清理中間 JSON
-    os.remove(json_path)
-    print(f"\nCleaned up intermediate JSON. Final output: fhir-test-data-bundle.zip")
+    print(f"\nDone. Output: fhir-test-data-bundle.json + fhir-test-data-bundle.zip")
 
 if __name__ == "__main__":
     main()
