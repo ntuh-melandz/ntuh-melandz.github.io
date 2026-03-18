@@ -709,9 +709,17 @@ else if (patient != null)
     @if (!string.IsNullOrEmpty(previewImageSrc))
     {
         <div class="image-preview-overlay" @onclick="CloseImage">
-            <div class="image-preview-content">
-                <img src="@previewImageSrc" alt="放大預覽" class="preview-full-image" />
-                <button class="btn-close-preview" @onclick="CloseImage">✕</button>
+            <div class="image-preview-content" @onclick:stopPropagation="true">
+                <img src="@previewImageSrc" alt="放大預覽"
+                     class="preview-full-image @(isImageInverted ? "image-inverted" : "")" />
+                <div class="preview-toolbar">
+                    <button class="btn-preview-tool @(isImageInverted ? "active" : "")" @onclick="ToggleInvert" title="負片效果">
+                        🔄 負片
+                    </button>
+                    <button class="btn-preview-tool" @onclick="CloseImage" title="關閉">
+                        ✕ 關閉
+                    </button>
+                </div>
             </div>
         </div>
     }
@@ -746,21 +754,37 @@ else if (patient != null)
             border: 2px solid white;
         }
 
-        .btn-close-preview {
-            position: absolute;
-            top: -40px;
-            right: 0;
-            background: transparent;
-            border: none;
-            color: white;
-            font-size: 2rem;
-            cursor: pointer;
-            opacity: 0.8;
-            transition: opacity 0.2s;
+        .image-inverted {
+            filter: invert(1);
         }
 
-        .btn-close-preview:hover {
-            opacity: 1;
+        .preview-toolbar {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-preview-tool {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 1rem;
+            padding: 6px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
+        }
+
+        .btn-preview-tool:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-preview-tool.active {
+            background: rgba(255, 255, 255, 0.4);
+            border-color: white;
         }
     </style>
 
@@ -1624,6 +1648,7 @@ else if (patient != null)
     }
 
     private string? previewImageSrc;
+    private bool isImageInverted = false;
 
     private string FormatDateTime(string? dateTimeStr)
     {
@@ -1651,5 +1676,11 @@ else if (patient != null)
     private void CloseImage()
     {
         previewImageSrc = null;
+        isImageInverted = false;
+    }
+
+    private void ToggleInvert()
+    {
+        isImageInverted = !isImageInverted;
     }
 }
