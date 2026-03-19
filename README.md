@@ -132,6 +132,10 @@ graph TD
   - 顯示 AI 判讀結論（如：糖尿病視網膜病變嚴重程度）。
   - **互動式檢視**：支援點擊放大預覽影像，並提供負片（反色）效果切換，便於觀察影像細節。
 
+  | 原始影像 | 負片效果 |
+  |:---:|:---:|
+  | ![原始眼底鏡影像](docs/眼底鏡圖.png) | ![負片效果](docs/負片效果.png) |
+
 ### 3. 臨床數據整合 (Clinical Data)
 - **FHIR Resource**:
   - `Observation`: 生命徵象數據（如體溫、血壓）。
@@ -190,18 +194,7 @@ dotnet run
 
 > 本地測試時 Redirect URI 為 `https://localhost:5001/redirect`
 
-### 4. 應用程式設定 (`wwwroot/appsettings.json`)
-
-| 設定項 | 說明 |
-|--------|------|
-| `Fhir:ClientId` | SMART on FHIR Client ID |
-| `Fhir:EncryptedClientSecret` | XOR 加密後的 Client Secret |
-| `Fhir:DefaultOrganizationId` | 預設醫院代碼（用於病患清單篩選） |
-| `AiService:Model` | 主要 AI 模型 |
-| `FallbackService:Model` | 第一備援 AI 模型 |
-| `FallbackService2:Model` | 第二備援 AI 模型 |
-
-### 5. SMART Launch 流程
+### 4. SMART Launch 流程
 
 ```mermaid
 sequenceDiagram
