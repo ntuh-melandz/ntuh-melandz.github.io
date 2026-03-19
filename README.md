@@ -81,7 +81,7 @@ graph TD
     subgraph "External Services"
         FHIR[("FHIR Server")]
         AuthServer["OAuth2 Server"]
-        LLM["LLM Service (AI)"]
+        LLM["LLM Service (AI x3 Fallback)"]
     end
 
     UI --> Auth
