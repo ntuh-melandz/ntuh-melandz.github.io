@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Image analyst Integration platform | Smart on FHIR @@ NTUH</title>
+    <base href="/" />
+    
+    <!-- Security Headers (via Meta Tags where possible) -->
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' 'unsafe-inline'; 
+                   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+                   img-src 'self' data: blob:; 
+                   font-src 'self' https://fonts.gstatic.com; 
+                   connect-src 'self' https://openrouter.ai http://localhost:11434 https://api64.ipify.org https://api.ipify.org https://jsonip.com https://www.cloudflare.com https://thas.mohw.gov.tw *;
+                   frame-src 'none';
+                   object-src 'none';">
+    
+    <!-- Clickjacking Protection (Frame-busting script) -->
+    <script>
+        if (self !== top) {
+            top.location = self.location;
+        }
+    </script>
+
+    <link rel="stylesheet" href="css/app.css" />
+</head>
+
+<body>
+    <div id="app">
+        <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh;">
+            <div style="text-align: center;">
+                <div
+                    style="border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin: 0 auto 1rem;">
+                </div>
+                <p>正在載入應用程式...</p>
+            </div>
+        </div>
+        <style>
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+        </style>
+    </div>
+
+    <div id="blazor-error-ui">
+        發生未處理的錯誤。
+        <a href="" class="reload">重新載入</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script>
+        // Helper function to get client IP for AuditEvent logging
+        async function getClientIp() {
+            console.log('[IP] Starting IP detection...');
+            
+            // Try multiple IP services with different CORS policies
+            const services = [
+                { url: 'https://api64.ipify.org?format=json', parser: async (r) => (await r.json()).ip },
+                { url: 'https://api.ipify.org?format=json', parser: async (r) => (await r.json()).ip },
+                { url: 'https://jsonip.com', parser: async (r) => (await r.json()).ip },
+                {
+                    url: 'https://www.cloudflare.com/cdn-cgi/trace', parser: async (r) => {
+                        const text = await r.text();
+                        const match = text.match(/ip=([^\n]+)/);
+                        return match ? match[1] : null;
+                    }
+                }
+            ];
+
+            for (const svc of services) {
+                try {
+                    // Use a manual timeout for better compatibility
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 3000);
+                    
+                    const response = await fetch(svc.url, { 
+                        mode: 'cors', 
+                        signal: controller.signal 
+                    });
+                    clearTimeout(timeoutId);
+
+                    if (response.ok) {
+                        const ip = await svc.parser(response);
+                        if (ip) {
+                            console.log('[IP] Got IP from:', svc.url, '->', ip);
+                            return ip;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('[IP] Failed:', svc.url, e.name === 'AbortError' ? 'Timeout' : e.message);
+                }
+            }
+
+            console.warn('[IP] All external services failed, trying local detection...');
+            
+            // Fallback: Try to get local IP via WebRTC
+            try {
+                const localIp = await new Promise((resolve) => {
+                    const RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+                    if (!RTCPeerConnection) {
+                        resolve(null);
+                        return;
+                    }
+                    
+                    const pc = new RTCPeerConnection({ iceServers: [] });
+                    pc.createDataChannel('');
+                    pc.createOffer().then(offer => pc.setLocalDescription(offer)).catch(() => resolve(null));
+                    
+                    pc.onicecandidate = (ice) => {
+                        if (!ice || !ice.candidate || !ice.candidate.candidate) {
+                            // No more candidates
+                            return;
+                        }
+                        const parts = ice.candidate.candidate.split(' ');
+                        const ip = parts[4];
+                        if (ip && (ip.includes('.') || ip.includes(':'))) {
+                            pc.onicecandidate = null;
+                            pc.close();
+                            resolve(ip);
+                        }
+                    };
+                    
+                    // Timeout for WebRTC
+                    setTimeout(() => {
+                        pc.onicecandidate = null;
+                        pc.close();
+                        resolve(null);
+                    }, 1500);
+                });
+                
+                if (localIp) {
+                    console.log('[IP] Got local IP via WebRTC:', localIp);
+                    return localIp + " (Local)";
+                }
+            } catch (e) {
+                console.warn('[IP] WebRTC fallback failed:', e.message);
+            }
+
+            console.log('[IP] Returning default fallback');
+            return "127.0.0.1 (Fallback)";
+        }
+    </script>
+    <script src="_framework/blazor.webassembly.js"></script>
+</body>
+
+</html>

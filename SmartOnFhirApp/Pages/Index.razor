@@ -205,12 +205,6 @@ else if (showPatientSelection && availablePatients != null)
             {
                 <div class="text-center py-3 text-muted">
                     <p>找不到符合的病患資料</p>
-                    <small>目前連線至: @fhirBaseUrl</small>
-                    @if (!string.IsNullOrEmpty(lastRequestUrl))
-                    {
-                        <br/>
-                        <small style="font-size: 0.7em; color: #999;">Debug URL: @lastRequestUrl</small>
-                    }
                 </div>
             }
 
@@ -1015,34 +1009,58 @@ else if (patient != null)
             StateHasChanged();
 
             // Load available organizations for search filter
+            // 1. 先單獨取得我們指定的醫院（確保一定有）
+            var defaultOrg = await FhirService.GetOrganizationAsync(fhirBaseUrl, defaultOrgId);
+
+            // 2. 再撈清單
             var orgs = await FhirService.GetOrganizationsAsync(fhirBaseUrl);
-            
-            if (orgs != null)
+
+            if (orgs != null || defaultOrg != null)
             {
                 // FORCE UI UPDATE: Clear list first
                 availableOrgs = null;
                 StateHasChanged();
                 await Task.Delay(50); // Small delay to allow UI to clear
 
-                // Filter out deprecated org-ntuh
-                orgs = orgs.Where(o => o.Id != "org-ntuh").ToList();
+                orgs = orgs ?? new List<Organization>();
 
-                // 預設醫院排最前面
-                var ntuh = orgs.Where(o => o.Id == defaultOrgId)
-                             .ToList();
+                // Filter out blank names
+                orgs = orgs.Where(o => !string.IsNullOrWhiteSpace(o.Name)).ToList();
 
-                var others = orgs.Except(ntuh) // Use Except to avoid duplicates safely
-                                 .OrderBy(o => o.Name)
-                                 .ToList();
+                // 去重：同名取最舊一筆，排除指定醫院及與其同名的重複項
+                var defaultOrgName = defaultOrg?.Name;
+                var others = orgs
+                    .Where(o => o.Id != defaultOrgId)
+                    .Where(o => defaultOrgName == null || o.Name != defaultOrgName)
+                    .GroupBy(o => o.Name!)
+                    .Select(g => g.OrderBy(o => o.Meta?.LastUpdated ?? "").First())
+                    .ToList();
 
-                availableOrgs = ntuh.Concat(others).ToList();
+                // 中文醫院排前面，英文排後面，各自依名稱排序
+                var chineseOrgs = others
+                    .Where(o => !string.IsNullOrEmpty(o.Name) && o.Name.Any(c => c > '\u4E00' && c < '\u9FFF'))
+                    .OrderBy(o => o.Name)
+                    .ToList();
 
-                // Auto-select NTUH if found
-                if (ntuh.Any())
+                var englishOrgs = others
+                    .Except(chineseOrgs)
+                    .OrderBy(o => o.Name)
+                    .ToList();
+
+                // 組合：指定醫院置頂 → 中文 → 英文
+                var sorted = new List<Organization>();
+                if (defaultOrg != null) sorted.Add(defaultOrg);
+                sorted.AddRange(chineseOrgs);
+                sorted.AddRange(englishOrgs);
+
+                availableOrgs = sorted;
+
+                // Auto-select default org
+                if (defaultOrg != null)
                 {
-                    selectedSearchOrgId = ntuh.First().Id;
+                    selectedSearchOrgId = defaultOrg.Id;
                 }
-                
+
                 await InvokeAsync(StateHasChanged);
             }
             

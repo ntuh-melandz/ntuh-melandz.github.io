@@ -498,8 +498,8 @@ public class FhirClientService
         try
         {
             var client = await GetAuthenticatedHttpClientAsync();
-            // 增加數量並按更新時間倒序排列，確保剛新增的醫院會出現在清單中
-            var url = $"{fhirBaseUrl}/Organization?_count=200&_sort=-_lastUpdated";
+            // 從最舊排到最新，避免被大量重複資料洗版
+            var url = $"{fhirBaseUrl}/Organization?_count=500&_sort=_lastUpdated";
 
             var response = await client.GetAsync(url);
             if (!await CheckResponseAsync(response)) return null;

@@ -71,6 +71,15 @@ public class Patient
     public Reference? ManagingOrganization { get; set; }
 }
 
+public class ResourceMeta
+{
+    [JsonPropertyName("versionId")]
+    public string? VersionId { get; set; }
+
+    [JsonPropertyName("lastUpdated")]
+    public string? LastUpdated { get; set; }
+}
+
 public class Organization
 {
     [JsonPropertyName("resourceType")]
@@ -78,6 +87,9 @@ public class Organization
 
     [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("meta")]
+    public ResourceMeta? Meta { get; set; }
 
     [JsonPropertyName("name")]
     public string? Name { get; set; }
